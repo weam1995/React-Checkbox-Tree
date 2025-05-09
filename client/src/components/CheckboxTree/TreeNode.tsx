@@ -99,6 +99,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       }
     }
     
+    // Update selection
     onSelectionChange(newSelectedItems);
   };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { CheckboxTreeProps } from './types';
+import { CheckboxTreeProps, TreeItem } from './types';
 import SearchBox from './SearchBox';
 import TreeNode from './TreeNode';
 import { itemMatchesSearch } from '@/lib/treeUtils';
@@ -63,12 +63,71 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     }
   };
 
+  // Handle node expansion toggle
   const handleExpandToggle = (nodeId: string) => {
     setExpandedNodes(prev => 
       prev.includes(nodeId)
         ? prev.filter(id => id !== nodeId)
         : [...prev, nodeId]
     );
+  };
+
+  // Handle selection changes with parent auto-selection
+  const handleSelectionChange = (newSelectedItems: string[]) => {
+    // Apply parent selection logic before passing to the consumer
+    const finalSelection = propagateSelectionToParents(newSelectedItems, items);
+    onSelectionChange(finalSelection);
+  };
+  
+  // Helper to propagate selection up to parents
+  const propagateSelectionToParents = (selection: string[], treeItems: TreeItem[]): string[] => {
+    const selected = new Set(selection);
+    const result = [...selection];
+    let changed = false;
+    
+    // Check if all children of a node are selected
+    const areAllChildrenSelected = (node: TreeItem): boolean => {
+      if (!node.children || node.children.length === 0) return true;
+      
+      return node.children.every(child => {
+        // First check if this child itself is selected
+        if (!selected.has(child.id)) return false;
+        
+        // Then recursively check its children
+        return areAllChildrenSelected(child);
+      });
+    };
+    
+    // Process nodes to auto-select parents
+    const processNodes = (nodes: TreeItem[]) => {
+      nodes.forEach(node => {
+        // Check if all children are selected
+        if (node.children && node.children.length > 0) {
+          // First process deeper levels
+          processNodes(node.children);
+          
+          // Then check current node
+          if (areAllChildrenSelected(node) && !selected.has(node.id)) {
+            result.push(node.id);
+            selected.add(node.id);
+            changed = true;
+          }
+        }
+      });
+    };
+    
+    // Keep processing until no more changes are made
+    // This handles multi-level propagation (e.g., child → parent → grandparent)
+    let iterations = 0;
+    const maxIterations = 10; // Prevent infinite loops in case of circular structures
+    
+    do {
+      changed = false;
+      processNodes(treeItems);
+      iterations++;
+    } while (changed && iterations < maxIterations);
+    
+    return result;
   };
 
   // Helper to expand all nodes
@@ -134,7 +193,7 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
                 key={item.id}
                 item={item}
                 selectedItems={selectedItems}
-                onSelectionChange={onSelectionChange}
+                onSelectionChange={handleSelectionChange}
                 searchTerm={searchTerm}
                 expandedNodes={expandedNodes}
                 onExpandToggle={handleExpandToggle}

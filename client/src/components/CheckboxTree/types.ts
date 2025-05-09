@@ -18,6 +18,10 @@ export interface TreeItem {
    * Children items for nested structure
    */
   children?: TreeItem[];
+  /**
+   * Whether the node is disabled (cannot be selected/deselected)
+   */
+  disabled?: boolean;
 }
 
 /**

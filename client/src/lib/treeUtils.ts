@@ -25,28 +25,19 @@ export function getAllChildIds(item: TreeItem): string[] {
 
   const childIds: string[] = [];
   
-  const processChildren = (currentItem: TreeItem, parentPath: string) => {
-    const currentPath = parentPath ? `${parentPath}.${currentItem.id}` : currentItem.id;
-    childIds.push(currentPath);
-    
+  // Process all descendants recursively
+  const processItem = (currentItem: TreeItem) => {
     if (currentItem.children && currentItem.children.length > 0) {
       currentItem.children.forEach(child => {
-        processChildren(child, currentPath);
+        childIds.push(child.id);
+        processItem(child);
       });
     }
   };
-
-  item.children.forEach(child => {
-    const childPath = item.id ? `${item.id}.${child.id}` : child.id;
-    childIds.push(childPath);
-    
-    if (child.children && child.children.length > 0) {
-      child.children.forEach(grandchild => {
-        processChildren(grandchild, childPath);
-      });
-    }
-  });
-
+  
+  // Start processing from the given item
+  processItem(item);
+  
   return childIds;
 }
 

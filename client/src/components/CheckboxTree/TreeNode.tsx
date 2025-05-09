@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { TreeNodeProps } from './types';
+import { TreeNodeProps, TreeItem } from './types';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { highlightText, getAllChildIds } from '@/lib/treeUtils';
+import { highlightText } from '@/lib/treeUtils';
 
 const TreeNode: React.FC<TreeNodeProps> = ({
   item,
@@ -21,11 +21,25 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   const hasPartialSelection = useMemo(() => {
     if (!hasChildren) return false;
     
-    const childIds = getAllChildIds(item);
-    const hasSelectedChild = childIds.some(id => selectedItems.includes(id));
-    const allChildrenSelected = childIds.every(id => selectedItems.includes(id));
+    // Get all descendant IDs
+    const descendantIds: string[] = [];
     
-    return hasSelectedChild && !allChildrenSelected;
+    const collectDescendantIds = (node: TreeItem) => {
+      if (node.children && node.children.length > 0) {
+        node.children.forEach((child: TreeItem) => {
+          descendantIds.push(child.id);
+          collectDescendantIds(child);
+        });
+      }
+    };
+    
+    collectDescendantIds(item);
+    
+    // Check if some but not all descendants are selected
+    const hasSelectedDescendant = descendantIds.some(id => selectedItems.includes(id));
+    const allDescendantsSelected = descendantIds.every(id => selectedItems.includes(id));
+    
+    return hasSelectedDescendant && !allDescendantsSelected;
   }, [hasChildren, item, selectedItems]);
 
   const handleCheckboxChange = (checked: boolean) => {
@@ -37,23 +51,51 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         newSelectedItems.push(item.id);
       }
       
-      // Select all children
+      // Select all children recursively
       if (hasChildren) {
-        const childIds = getAllChildIds(item);
-        childIds.forEach(childId => {
-          if (!newSelectedItems.includes(childId)) {
-            newSelectedItems.push(childId);
+        // Get direct children
+        item.children?.forEach((child: TreeItem) => {
+          if (!newSelectedItems.includes(child.id)) {
+            newSelectedItems.push(child.id);
           }
+          
+          // Process this child's children recursively
+          const processChildren = (node: TreeItem) => {
+            if (node.children && node.children.length > 0) {
+              node.children.forEach((subChild: TreeItem) => {
+                if (!newSelectedItems.includes(subChild.id)) {
+                  newSelectedItems.push(subChild.id);
+                }
+                processChildren(subChild);
+              });
+            }
+          };
+          
+          processChildren(child);
         });
       }
     } else {
       // Deselect this item
       newSelectedItems = newSelectedItems.filter(id => id !== item.id);
       
-      // Deselect all children
+      // Deselect all children recursively
       if (hasChildren) {
-        const childIds = getAllChildIds(item);
-        newSelectedItems = newSelectedItems.filter(id => !childIds.includes(id));
+        // Process children recursively to get all descendant IDs
+        const descendantIds: string[] = [];
+        
+        const collectDescendantIds = (node: TreeItem) => {
+          if (node.children && node.children.length > 0) {
+            node.children.forEach((child: TreeItem) => {
+              descendantIds.push(child.id);
+              collectDescendantIds(child);
+            });
+          }
+        };
+        
+        collectDescendantIds(item);
+        
+        // Remove all descendants from selected items
+        newSelectedItems = newSelectedItems.filter(id => !descendantIds.includes(id));
       }
     }
     

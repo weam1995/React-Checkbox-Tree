@@ -72,14 +72,17 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     );
   };
 
-  // Handle selection changes with parent auto-selection
+  // Handle selection changes with parent auto-selection/deselection
   const handleSelectionChange = (newSelectedItems: string[]) => {
-    // Apply parent selection logic before passing to the consumer
-    const finalSelection = propagateSelectionToParents(newSelectedItems, items);
-    onSelectionChange(finalSelection);
+    // First propagate parents up (selection)
+    const withParentsSelected = propagateSelectionToParents(newSelectedItems, items);
+    // Then propagate parents down (deselection)
+    const withParentsDeselected = propagateDeselectionToParents(withParentsSelected, items);
+    
+    onSelectionChange(withParentsDeselected);
   };
   
-  // Helper to propagate selection up to parents
+  // Helper to propagate selection up to parents (when all children are selected)
   const propagateSelectionToParents = (selection: string[], treeItems: TreeItem[]): string[] => {
     const selected = new Set(selection);
     const result = [...selection];
@@ -120,6 +123,63 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     // This handles multi-level propagation (e.g., child → parent → grandparent)
     let iterations = 0;
     const maxIterations = 10; // Prevent infinite loops in case of circular structures
+    
+    do {
+      changed = false;
+      processNodes(treeItems);
+      iterations++;
+    } while (changed && iterations < maxIterations);
+    
+    return result;
+  };
+  
+  // Helper to propagate deselection to parents (when all children are deselected)
+  const propagateDeselectionToParents = (selection: string[], treeItems: TreeItem[]): string[] => {
+    const selected = new Set(selection);
+    const result = [...selection];
+    let changed = false;
+    
+    // Get all direct children for a node
+    const getChildrenIds = (node: TreeItem): string[] => {
+      if (!node.children || node.children.length === 0) return [];
+      return node.children.map(child => child.id);
+    };
+    
+    // Check if node should be deselected
+    const shouldNodeBeDeselected = (node: TreeItem): boolean => {
+      // If node has no children, it should keep its current selection state
+      if (!node.children || node.children.length === 0) return false;
+      
+      // If any child is selected, parent should remain selected
+      const anyChildSelected = node.children.some(child => selected.has(child.id));
+      
+      // Parent should be deselected if it's currently selected but no children are selected
+      return selected.has(node.id) && !anyChildSelected;
+    };
+    
+    // Process nodes to auto-deselect parents
+    const processNodes = (nodes: TreeItem[]) => {
+      nodes.forEach(node => {
+        // Process deeper levels first
+        if (node.children && node.children.length > 0) {
+          processNodes(node.children);
+        }
+        
+        // Check if this node should be deselected
+        if (shouldNodeBeDeselected(node)) {
+          const index = result.indexOf(node.id);
+          if (index !== -1) {
+            result.splice(index, 1); // Remove from results
+            selected.delete(node.id); // Remove from set
+            changed = true;
+          }
+        }
+      });
+    };
+    
+    // Keep processing until no more changes are made
+    let iterations = 0;
+    const maxIterations = 10; // Prevent infinite loops
     
     do {
       changed = false;

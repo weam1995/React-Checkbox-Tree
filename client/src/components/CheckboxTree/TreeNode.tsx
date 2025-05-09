@@ -18,102 +18,101 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   const isSelected = selectedItems.includes(item.id);
   
   // Calculate node selection state (full, partial, or none)
-  const { hasPartialSelection, hasSomeSelection } = useMemo(() => {
+  const { hasPartialSelection, isFullySelected } = useMemo(() => {
     if (!hasChildren) {
-      return { hasPartialSelection: false, hasSomeSelection: isSelected };
+      return { hasPartialSelection: false, isFullySelected: isSelected };
     }
     
-    // Get direct children IDs
-    const directChildrenIds = item.children!.map(child => child.id);
+    // Find all leaf nodes under this node
+    const leafNodeIds: string[] = [];
     
-    // Get all descendant IDs (for deeper levels)
-    const allDescendantIds: string[] = [];
-    
-    const collectAllDescendantIds = (node: TreeItem) => {
-      if (node.children && node.children.length > 0) {
-        node.children.forEach((child: TreeItem) => {
-          allDescendantIds.push(child.id);
-          collectAllDescendantIds(child);
-        });
+    const collectLeafNodeIds = (node: TreeItem) => {
+      if (!node.children || node.children.length === 0) {
+        leafNodeIds.push(node.id);
+      } else {
+        node.children.forEach(child => collectLeafNodeIds(child));
       }
     };
     
-    collectAllDescendantIds(item);
+    // Start with the current node's children
+    item.children!.forEach(child => collectLeafNodeIds(child));
     
-    // Check various selection states
-    const directChildrenSelected = directChildrenIds.filter(id => selectedItems.includes(id));
-    const hasSelectedDirectChild = directChildrenSelected.length > 0;
-    const allDirectChildrenSelected = directChildrenSelected.length === directChildrenIds.length;
+    // Count how many leaf nodes are selected
+    const selectedLeafNodes = leafNodeIds.filter(id => selectedItems.includes(id));
     
-    const hasAnyDescendantSelected = allDescendantIds.some(id => selectedItems.includes(id));
+    // Determine selection states
+    const hasSelectedLeafNodes = selectedLeafNodes.length > 0;
+    const allLeafNodesSelected = selectedLeafNodes.length === leafNodeIds.length;
     
-    // Determine if this is a partial selection
-    // A node has partial selection if:
-    // 1. Some, but not all, direct children are selected, OR
-    // 2. At least one descendant is selected but the node itself is not selected
-    const hasPartialChildren = hasSelectedDirectChild && !allDirectChildrenSelected;
-    const hasPartialSelection = hasPartialChildren || (hasAnyDescendantSelected && !isSelected);
+    // A node is partially selected if some but not all of its leaf descendants are selected
+    const hasPartialSelection = hasSelectedLeafNodes && !allLeafNodesSelected;
     
-    // Determine if this node has any selection (itself or descendants)
-    const hasSomeSelection = isSelected || hasAnyDescendantSelected;
+    // A node is fully selected if all its leaf descendants are selected
+    const isFullySelected = allLeafNodesSelected;
     
-    return { hasPartialSelection, hasSomeSelection };
+    return { hasPartialSelection, isFullySelected };
   }, [hasChildren, item, selectedItems, isSelected]);
 
   const handleCheckboxChange = (checked: boolean) => {
     let newSelectedItems = [...selectedItems];
     
     if (checked) {
-      // Select this item
-      if (!newSelectedItems.includes(item.id)) {
-        newSelectedItems.push(item.id);
-      }
-      
-      // Select all children recursively
-      if (hasChildren) {
-        // Get direct children
-        item.children?.forEach((child: TreeItem) => {
-          if (!newSelectedItems.includes(child.id)) {
-            newSelectedItems.push(child.id);
-          }
-          
-          // Process this child's children recursively
-          const processChildren = (node: TreeItem) => {
-            if (node.children && node.children.length > 0) {
-              node.children.forEach((subChild: TreeItem) => {
-                if (!newSelectedItems.includes(subChild.id)) {
-                  newSelectedItems.push(subChild.id);
-                }
-                processChildren(subChild);
-              });
-            }
-          };
-          
-          processChildren(child);
-        });
-      }
-    } else {
-      // Deselect this item
-      newSelectedItems = newSelectedItems.filter(id => id !== item.id);
-      
-      // Deselect all children recursively
-      if (hasChildren) {
-        // Process children recursively to get all descendant IDs
-        const descendantIds: string[] = [];
+      // If this is a leaf node, select it
+      if (!hasChildren) {
+        if (!newSelectedItems.includes(item.id)) {
+          newSelectedItems.push(item.id);
+        }
+      } else {
+        // If this is a parent node, select all leaf nodes under it
+        const leafNodeIds: string[] = [];
         
-        const collectDescendantIds = (node: TreeItem) => {
-          if (node.children && node.children.length > 0) {
-            node.children.forEach((child: TreeItem) => {
-              descendantIds.push(child.id);
-              collectDescendantIds(child);
+        const collectLeafNodeIds = (node: TreeItem) => {
+          if (!node.children || node.children.length === 0) {
+            // This is a leaf node
+            leafNodeIds.push(node.id);
+          } else {
+            // Process children
+            node.children.forEach(child => {
+              collectLeafNodeIds(child);
             });
           }
         };
         
-        collectDescendantIds(item);
+        // Start collection with this node
+        collectLeafNodeIds(item);
         
-        // Remove all descendants from selected items
-        newSelectedItems = newSelectedItems.filter(id => !descendantIds.includes(id));
+        // Add all leaf node IDs to the selection
+        leafNodeIds.forEach(id => {
+          if (!newSelectedItems.includes(id)) {
+            newSelectedItems.push(id);
+          }
+        });
+      }
+    } else {
+      // If this is a leaf node, deselect it
+      if (!hasChildren) {
+        newSelectedItems = newSelectedItems.filter(id => id !== item.id);
+      } else {
+        // If this is a parent node, deselect all leaf nodes under it
+        const leafNodeIds: string[] = [];
+        
+        const collectLeafNodeIds = (node: TreeItem) => {
+          if (!node.children || node.children.length === 0) {
+            // This is a leaf node
+            leafNodeIds.push(node.id);
+          } else {
+            // Process children
+            node.children.forEach(child => {
+              collectLeafNodeIds(child);
+            });
+          }
+        };
+        
+        // Start collection with this node
+        collectLeafNodeIds(item);
+        
+        // Remove all leaf node IDs from the selection
+        newSelectedItems = newSelectedItems.filter(id => !leafNodeIds.includes(id));
       }
     }
     
@@ -129,7 +128,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
-      handleCheckboxChange(!isSelected);
+      if (hasChildren) {
+        handleCheckboxChange(!isFullySelected);
+      } else {
+        handleCheckboxChange(!isSelected);
+      }
       e.preventDefault();
     } else if (e.key === 'ArrowRight' && hasChildren && !isExpanded) {
       onExpandToggle(item.id);
@@ -167,7 +170,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               // Custom partial checkbox appearance
               <div 
                 className="w-4 h-4 rounded-sm bg-primary/40 border border-primary/70 flex items-center justify-center cursor-pointer"
-                onClick={() => handleCheckboxChange(!isSelected)}
+                onClick={() => handleCheckboxChange(!isFullySelected)}
               >
                 <MinusCircle 
                   size={12} 
@@ -178,7 +181,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               // Regular checkbox
               <Checkbox
                 id={item.id}
-                checked={isSelected}
+                checked={isFullySelected || (!hasChildren && isSelected)}
                 onCheckedChange={handleCheckboxChange}
                 aria-label={`Select ${item.name}`}
                 className="h-4 w-4"

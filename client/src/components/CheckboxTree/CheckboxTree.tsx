@@ -72,14 +72,59 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     );
   };
 
-  // Handle selection changes with parent auto-selection/deselection
+  // Handle selection changes - keeping only leaf nodes in the selection array
   const handleSelectionChange = (newSelectedItems: string[]) => {
-    // First propagate parents up (selection)
-    const withParentsSelected = propagateSelectionToParents(newSelectedItems, items);
-    // Then propagate parents down (deselection)
-    const withParentsDeselected = propagateDeselectionToParents(withParentsSelected, items);
+    // Extract only leaf nodes (nodes without children)
+    const leafNodesOnly = filterToLeafNodesOnly(newSelectedItems, items);
     
-    onSelectionChange(withParentsDeselected);
+    // Pass the leaf nodes to the consumer
+    onSelectionChange(leafNodesOnly);
+  };
+  
+  // Get all leaf nodes in the tree
+  const getAllLeafNodes = (treeItems: TreeItem[]): string[] => {
+    const leafNodes: string[] = [];
+    
+    const collectLeafNodes = (nodes: TreeItem[]) => {
+      nodes.forEach(node => {
+        // If node has no children, it's a leaf node
+        if (!node.children || node.children.length === 0) {
+          leafNodes.push(node.id);
+        } else {
+          // Process children nodes
+          collectLeafNodes(node.children);
+        }
+      });
+    };
+    
+    collectLeafNodes(treeItems);
+    return leafNodes;
+  };
+  
+  // Filter an array of node IDs to only include leaf nodes
+  const filterToLeafNodesOnly = (selectedIds: string[], treeItems: TreeItem[]): string[] => {
+    // Build a map of all nodes for quick lookups
+    const nodeMap = new Map<string, TreeItem>();
+    
+    const buildNodeMap = (nodes: TreeItem[], parentPath = '') => {
+      nodes.forEach(node => {
+        const path = node.id;
+        nodeMap.set(path, node);
+        
+        if (node.children && node.children.length > 0) {
+          buildNodeMap(node.children, path);
+        }
+      });
+    };
+    
+    buildNodeMap(treeItems);
+    
+    // Filter to include only leaf nodes from the selection
+    return selectedIds.filter(id => {
+      const node = nodeMap.get(id);
+      // Include the ID if it's a leaf node (no children)
+      return node && (!node.children || node.children.length === 0);
+    });
   };
   
   // Helper to propagate selection up to parents (when all children are selected)

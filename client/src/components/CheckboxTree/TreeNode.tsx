@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { TreeNodeProps, TreeItem } from './types';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle, MinusCircle } from 'lucide-react';
 import { highlightText } from '@/lib/treeUtils';
 
 const TreeNode: React.FC<TreeNodeProps> = ({
@@ -17,30 +17,48 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   const isExpanded = expandedNodes.includes(item.id);
   const isSelected = selectedItems.includes(item.id);
   
-  // Calculate if some (but not all) children are selected
-  const hasPartialSelection = useMemo(() => {
-    if (!hasChildren) return false;
+  // Calculate node selection state (full, partial, or none)
+  const { hasPartialSelection, hasSomeSelection } = useMemo(() => {
+    if (!hasChildren) {
+      return { hasPartialSelection: false, hasSomeSelection: isSelected };
+    }
     
-    // Get all descendant IDs
-    const descendantIds: string[] = [];
+    // Get direct children IDs
+    const directChildrenIds = item.children!.map(child => child.id);
     
-    const collectDescendantIds = (node: TreeItem) => {
+    // Get all descendant IDs (for deeper levels)
+    const allDescendantIds: string[] = [];
+    
+    const collectAllDescendantIds = (node: TreeItem) => {
       if (node.children && node.children.length > 0) {
         node.children.forEach((child: TreeItem) => {
-          descendantIds.push(child.id);
-          collectDescendantIds(child);
+          allDescendantIds.push(child.id);
+          collectAllDescendantIds(child);
         });
       }
     };
     
-    collectDescendantIds(item);
+    collectAllDescendantIds(item);
     
-    // Check if some but not all descendants are selected
-    const hasSelectedDescendant = descendantIds.some(id => selectedItems.includes(id));
-    const allDescendantsSelected = descendantIds.every(id => selectedItems.includes(id));
+    // Check various selection states
+    const directChildrenSelected = directChildrenIds.filter(id => selectedItems.includes(id));
+    const hasSelectedDirectChild = directChildrenSelected.length > 0;
+    const allDirectChildrenSelected = directChildrenSelected.length === directChildrenIds.length;
     
-    return hasSelectedDescendant && !allDescendantsSelected;
-  }, [hasChildren, item, selectedItems]);
+    const hasAnyDescendantSelected = allDescendantIds.some(id => selectedItems.includes(id));
+    
+    // Determine if this is a partial selection
+    // A node has partial selection if:
+    // 1. Some, but not all, direct children are selected, OR
+    // 2. At least one descendant is selected but the node itself is not selected
+    const hasPartialChildren = hasSelectedDirectChild && !allDirectChildrenSelected;
+    const hasPartialSelection = hasPartialChildren || (hasAnyDescendantSelected && !isSelected);
+    
+    // Determine if this node has any selection (itself or descendants)
+    const hasSomeSelection = isSelected || hasAnyDescendantSelected;
+    
+    return { hasPartialSelection, hasSomeSelection };
+  }, [hasChildren, item, selectedItems, isSelected]);
 
   const handleCheckboxChange = (checked: boolean) => {
     let newSelectedItems = [...selectedItems];
@@ -144,13 +162,29 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         )}
         
         <div className="flex items-center ml-1">
-          <Checkbox
-            id={item.id}
-            checked={isSelected}
-            onCheckedChange={handleCheckboxChange}
-            aria-label={`Select ${item.name}`}
-            className={`${hasPartialSelection && !isSelected ? 'bg-primary/50 text-white' : ''}`}
-          />
+          <div className="relative flex items-center">
+            {hasPartialSelection ? (
+              // Custom partial checkbox appearance
+              <div 
+                className="w-4 h-4 rounded-sm bg-primary/40 border border-primary/70 flex items-center justify-center cursor-pointer"
+                onClick={() => handleCheckboxChange(!isSelected)}
+              >
+                <MinusCircle 
+                  size={12} 
+                  className="text-white pointer-events-none" 
+                />
+              </div>
+            ) : (
+              // Regular checkbox
+              <Checkbox
+                id={item.id}
+                checked={isSelected}
+                onCheckedChange={handleCheckboxChange}
+                aria-label={`Select ${item.name}`}
+                className="h-4 w-4"
+              />
+            )}
+          </div>
           <label
             htmlFor={item.id}
             className={`ml-2 text-gray-700 ${level === 0 ? 'font-medium' : ''} cursor-pointer`}

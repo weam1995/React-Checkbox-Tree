@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckboxTreeProps, TreeItem } from './types';
 import SearchBox from './SearchBox';
 import TreeNode from './TreeNode';
@@ -23,170 +23,104 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
       return;
     }
 
-    // Create a filtered tree that only includes matching nodes and their parents
+    // Identify all nodes that match the search term directly or have matching descendants
+    const findMatchingNodes = (items: TreeItem[]): Set<string> => {
+      const matchingNodeIds = new Set<string>();
+      
+      // Recursive helper to check if a node or its descendants match
+      const checkNodeAndDescendants = (node: TreeItem): boolean => {
+        // Check if this node matches directly
+        const directMatch = itemDirectlyMatchesSearch(node, searchTerm);
+        
+        if (directMatch) {
+          matchingNodeIds.add(node.id);
+          return true;
+        }
+        
+        // Check descendants
+        let hasMatchingDescendant = false;
+        if (node.children && node.children.length > 0) {
+          for (const child of node.children) {
+            if (checkNodeAndDescendants(child)) {
+              hasMatchingDescendant = true;
+            }
+          }
+        }
+        
+        // If any descendants match, mark this node too
+        if (hasMatchingDescendant) {
+          matchingNodeIds.add(node.id);
+        }
+        
+        return directMatch || hasMatchingDescendant;
+      };
+      
+      // Check all root nodes
+      items.forEach(item => checkNodeAndDescendants(item));
+      
+      return matchingNodeIds;
+    };
+    
+    // Get all node IDs that match the search or have matching descendants
+    const matchingNodeIds = findMatchingNodes(items);
+    
+    // Filter the tree to only include matching nodes and their parents
     const createFilteredTree = (items: TreeItem[]): TreeItem[] => {
       return items
         .map(item => {
-          // Check if this item matches directly
-          const itemMatches = itemDirectlyMatchesSearch(item, searchTerm);
-          
-          // If it has children, filter them recursively
-          let filteredChildren: TreeItem[] = [];
-          
-          if (item.children && item.children.length > 0) {
-            // Only include children that match the search term directly
-            filteredChildren = item.children
-              .filter(child => itemDirectlyMatchesSearch(child, searchTerm) || 
-                               (child.children && child.children.length > 0 && 
-                                child.children.some(grandchild => itemMatchesSearch(grandchild, searchTerm))))
-              .map(child => {
-                // If this child has children, filter them recursively
-                if (child.children && child.children.length > 0) {
-                  return {
-                    ...child,
-                    children: createFilteredTree(child.children)
-                  };
-                }
-                // Leaf node that matches directly
-                return child;
-              });
-          }
-          
-          // Keep this item if:
-          // 1. It matches the search directly, OR
-          // 2. It has children that match after filtering
-          if (itemMatches || filteredChildren.length > 0) {
+          // Include this node if it matches or has matching descendants
+          if (matchingNodeIds.has(item.id)) {
+            // Filter children recursively
+            let filteredChildren: TreeItem[] = [];
+            
+            if (item.children && item.children.length > 0) {
+              filteredChildren = createFilteredTree(item.children);
+            }
+            
             return {
               ...item,
               children: filteredChildren
             };
           }
           
-          // Filter out this item completely
+          // Filter out this node and its subtree
           return null;
         })
         .filter(Boolean) as TreeItem[]; // Remove null items
     };
     
-    // Apply the filtering
+    // Create the filtered tree
     const filtered = createFilteredTree(items);
     setFilteredItems(filtered);
-
-    // Auto-expand all nodes in the filtered tree AND all nodes that have matching children
+    
+    // Ensure all nodes in the filtered tree with children are expanded
+    // and all parents of matching leaf nodes are expanded
     const nodesToExpand = new Set<string>();
     
-    // Find all parent paths for nodes that match the search term
-    const findParentPathsForMatches = (allItems: TreeItem[], searchTerm: string) => {
-      // Set to store all parent paths that need to be expanded
-      const parentPathsToExpand = new Set<string>();
-      
-      // Map to store parent-child relationships
-      const parentMap = new Map<string, string>();
-      
-      // Build the parent map
-      const buildParentMap = (nodes: TreeItem[], parentPath = '') => {
-        nodes.forEach(node => {
-          const currentPath = parentPath ? `${parentPath}.${node.id}` : node.id;
-          
-          if (node.children && node.children.length > 0) {
-            node.children.forEach(child => {
-              // Store child's full path -> parent's full path
-              const childPath = currentPath ? `${currentPath}.${child.id}` : child.id;
-              parentMap.set(childPath, currentPath);
-              
-              // Process child's children
-              if (child.children && child.children.length > 0) {
-                buildParentMap([child], currentPath);
-              }
-            });
-          }
-        });
-      };
-      
-      // Find all matching nodes and their parent container paths
-      const findAllMatches = (nodes: TreeItem[], parentPath = ''): string[] => {
-        let matches: string[] = [];
-        
-        nodes.forEach(node => {
-          const currentPath = parentPath ? `${parentPath}.${node.id}` : node.id;
-          
-          // Check if this node matches directly
-          if (itemDirectlyMatchesSearch(node, searchTerm)) {
-            matches.push(currentPath);
-          }
-          
-          // Check children
-          if (node.children && node.children.length > 0) {
-            // Check if any child starts with the search term - important for prefix searches like "T26"
-            const childMatches = findAllMatches(node.children, currentPath);
-            
-            if (childMatches.length > 0) {
-              // Add this node's path as it contains matching children
-              matches.push(currentPath);
-              // Also add all child matches
-              matches = matches.concat(childMatches);
-            }
-          }
-        });
-        
-        return matches;
-      };
-      
-      // Build the parent map
-      buildParentMap(allItems);
-      
-      // Find all matching nodes
-      const matchingNodes = findAllMatches(allItems);
-      
-      // For each matching node, add all of its parent paths
-      matchingNodes.forEach(nodePath => {
-        // Add this node itself (if it's a parent)
-        parentPathsToExpand.add(nodePath);
-        
-        // Find and add all parent paths
-        let currentPath = nodePath;
-        while (parentMap.has(currentPath)) {
-          const parentPath = parentMap.get(currentPath)!;
-          parentPathsToExpand.add(parentPath);
-          currentPath = parentPath;
-        }
-      });
-      
-      return parentPathsToExpand;
-    };
-    
-    // Get all node paths that need to be expanded
-    const parentPathsToExpand = findParentPathsForMatches(items, searchTerm);
-    
-    // Add all parent paths to expanded nodes set
-    parentPathsToExpand.forEach(path => {
-      nodesToExpand.add(path);
-      
-      // Also expand intermediate paths (if path is A.B.C, also expand A and A.B)
-      const parts = path.split('.');
-      for (let i = 1; i < parts.length; i++) {
-        nodesToExpand.add(parts.slice(0, i).join('.'));
+    // First add all parent nodes to the expansion set
+    filtered.forEach(item => {
+      // Parent nodes should always be expanded
+      if (item.children && item.children.length > 0) {
+        nodesToExpand.add(item.id);
       }
+      
+      // Process all nodes in the tree
+      const processNode = (node: TreeItem, path: string) => {
+        // If this node has children, expand it
+        if (node.children && node.children.length > 0) {
+          nodesToExpand.add(path);
+          
+          // Process children
+          node.children.forEach(child => {
+            const childPath = path ? `${path}.${child.id}` : child.id;
+            processNode(child, childPath);
+          });
+        }
+      };
+      
+      // Start with this root node
+      processNode(item, item.id);
     });
-    
-    // Process the filtered tree to ensure all visible nodes are expanded
-    const findAndExpandAllNodes = (items: TreeItem[], parentPath = '') => {
-      items.forEach(item => {
-        const fullPath = parentPath ? `${parentPath}.${item.id}` : item.id;
-        
-        // Always expand parent nodes in the filtered tree
-        if (item.children && item.children.length > 0) {
-          nodesToExpand.add(fullPath);
-        }
-        
-        // Recursively process children
-        if (item.children && item.children.length > 0) {
-          findAndExpandAllNodes(item.children, fullPath);
-        }
-      });
-    };
-    
-    findAndExpandAllNodes(filtered);
     
     // Set the expanded nodes state
     setExpandedNodes(Array.from(nodesToExpand));

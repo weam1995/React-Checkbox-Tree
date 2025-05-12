@@ -75,48 +75,99 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     // Auto-expand all nodes in the filtered tree AND all nodes that have matching children
     const nodesToExpand = new Set<string>();
     
-    // First pass: find all nodes that have matching descendants
-    const findNodesWithMatchingDescendants = (allItems: TreeItem[], searchTerm: string) => {
-      const nodeIdsWithMatches = new Set<string>();
+    // Find all parent paths for nodes that match the search term
+    const findParentPathsForMatches = (allItems: TreeItem[], searchTerm: string) => {
+      // Set to store all parent paths that need to be expanded
+      const parentPathsToExpand = new Set<string>();
       
-      const traverse = (node: TreeItem, parentIds: string[] = []) => {
-        // Check if this node matches the search term
-        if (itemDirectlyMatchesSearch(node, searchTerm)) {
-          // If there's a match, mark all ancestors as having matching descendants
-          parentIds.forEach(id => nodeIdsWithMatches.add(id));
-        }
-        
-        // Recursively check children
-        if (node.children && node.children.length > 0) {
-          node.children.forEach(child => {
-            traverse(child, [...parentIds, node.id]);
-          });
-        }
+      // Map to store parent-child relationships
+      const parentMap = new Map<string, string>();
+      
+      // Build the parent map
+      const buildParentMap = (nodes: TreeItem[], parentPath = '') => {
+        nodes.forEach(node => {
+          const currentPath = parentPath ? `${parentPath}.${node.id}` : node.id;
+          
+          if (node.children && node.children.length > 0) {
+            node.children.forEach(child => {
+              // Store child's full path -> parent's full path
+              const childPath = currentPath ? `${currentPath}.${child.id}` : child.id;
+              parentMap.set(childPath, currentPath);
+              
+              // Process child's children
+              if (child.children && child.children.length > 0) {
+                buildParentMap([child], currentPath);
+              }
+            });
+          }
+        });
       };
       
-      // Start traversal from all root nodes
-      allItems.forEach(item => traverse(item, []));
-      return nodeIdsWithMatches;
+      // Find all matching nodes
+      const findAllMatches = (nodes: TreeItem[], parentPath = ''): string[] => {
+        let matches: string[] = [];
+        
+        nodes.forEach(node => {
+          const currentPath = parentPath ? `${parentPath}.${node.id}` : node.id;
+          
+          // Check if this node matches
+          if (itemDirectlyMatchesSearch(node, searchTerm)) {
+            matches.push(currentPath);
+          }
+          
+          // Check children
+          if (node.children && node.children.length > 0) {
+            matches = matches.concat(findAllMatches(node.children, currentPath));
+          }
+        });
+        
+        return matches;
+      };
+      
+      // Build the parent map
+      buildParentMap(allItems);
+      
+      // Find all matching nodes
+      const matchingNodes = findAllMatches(allItems);
+      
+      // For each matching node, add all of its parent paths
+      matchingNodes.forEach(nodePath => {
+        // Add this node itself (if it's a parent)
+        parentPathsToExpand.add(nodePath);
+        
+        // Find and add all parent paths
+        let currentPath = nodePath;
+        while (parentMap.has(currentPath)) {
+          const parentPath = parentMap.get(currentPath)!;
+          parentPathsToExpand.add(parentPath);
+          currentPath = parentPath;
+        }
+      });
+      
+      return parentPathsToExpand;
     };
     
-    // Get all node IDs that have matching descendants
-    const nodesWithMatchingDescendants = findNodesWithMatchingDescendants(items, searchTerm);
+    // Get all node paths that need to be expanded
+    const parentPathsToExpand = findParentPathsForMatches(items, searchTerm);
     
-    // Second pass: mark all appropriate nodes for expansion
+    // Add all parent paths to expanded nodes set
+    parentPathsToExpand.forEach(path => {
+      nodesToExpand.add(path);
+      
+      // Also expand intermediate paths (if path is A.B.C, also expand A and A.B)
+      const parts = path.split('.');
+      for (let i = 1; i < parts.length; i++) {
+        nodesToExpand.add(parts.slice(0, i).join('.'));
+      }
+    });
+    
+    // Process the filtered tree to ensure all visible nodes are expanded
     const findAndExpandAllNodes = (items: TreeItem[], parentPath = '') => {
       items.forEach(item => {
         const fullPath = parentPath ? `${parentPath}.${item.id}` : item.id;
         
-        // Add all parent paths to be expanded
-        const parts = fullPath.split('.');
-        for (let i = 1; i < parts.length; i++) {
-          nodesToExpand.add(parts.slice(0, i).join('.'));
-        }
-        
-        // Add this node to be expanded if:
-        // 1. It has children in the filtered tree, OR
-        // 2. It has matching descendants in the full tree
-        if (item.children?.length || nodesWithMatchingDescendants.has(item.id)) {
+        // Always expand parent nodes in the filtered tree
+        if (item.children?.length > 0) {
           nodesToExpand.add(fullPath);
         }
         
@@ -128,6 +179,8 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     };
     
     findAndExpandAllNodes(filtered);
+    
+    // Set the expanded nodes state
     setExpandedNodes(Array.from(nodesToExpand));
   }, [searchTerm, items]);
 

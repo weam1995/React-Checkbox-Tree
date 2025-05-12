@@ -103,21 +103,29 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
         });
       };
       
-      // Find all matching nodes
+      // Find all matching nodes and their parent container paths
       const findAllMatches = (nodes: TreeItem[], parentPath = ''): string[] => {
         let matches: string[] = [];
         
         nodes.forEach(node => {
           const currentPath = parentPath ? `${parentPath}.${node.id}` : node.id;
           
-          // Check if this node matches
+          // Check if this node matches directly
           if (itemDirectlyMatchesSearch(node, searchTerm)) {
             matches.push(currentPath);
           }
           
           // Check children
           if (node.children && node.children.length > 0) {
-            matches = matches.concat(findAllMatches(node.children, currentPath));
+            // Check if any child starts with the search term - important for prefix searches like "T26"
+            const childMatches = findAllMatches(node.children, currentPath);
+            
+            if (childMatches.length > 0) {
+              // Add this node's path as it contains matching children
+              matches.push(currentPath);
+              // Also add all child matches
+              matches = matches.concat(childMatches);
+            }
           }
         });
         

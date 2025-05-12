@@ -1,61 +1,69 @@
-import React, { useState } from 'react';
-import { CheckboxTree, TreeItem } from '@/components/CheckboxTree';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import React, { useState } from "react";
+import { CheckboxTree, TreeItem } from "@/components/CheckboxTree";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 // Sample tree data
 const treeData: TreeItem[] = [
   {
-    id: 'Websso',
-    name: 'Websso',
+    id: "Websso",
+    name: "Websso",
     children: [
-      { 
-        id: 'Websso.Oid.dev', 
-        name: 'Oid.dev',
+      {
+        id: "Websso.Oid.dev",
+        name: "Oid.dev",
         children: [
-          { id: 'Websso.Oid.dev.T266622', name: 'T266622', disabled: true },
-          { id: 'Websso.Oid.dev.T266623', name: 'T266623', disabled: true }
-        ] 
-      }
-    ]
-  },
-  {
-    id: 'plants',
-    name: 'Plants',
-    children: [
-      { id: 'plants.roses', name: 'Roses' },
-      { id: 'plants.sunflowers', name: 'Sunflowers', disabled: true },
-      { id: 'plants.lilies', name: 'Lilies' }
-    ]
-  },
-  {
-    id: 'magical',
-    name: 'Magical Elements',
-    children: [
-      { id: 'magical.fairy-lights', name: 'Fairy Lights' },
-      { id: 'magical.glowing-mushrooms', name: 'Glowing Mushrooms' },
-      { 
-        id: 'magical.nested', 
-        name: 'Nested Magic',
-        children: [
-          { id: 'magical.nested.item1', name: 'Magic Item 1', disabled: true },
-          { id: 'magical.nested.item2', name: 'Magic Item 2', disabled: true }
-        ]
+          { id: "Websso.Oid.dev.T266622", name: "T266622", disabled: true },
+          { id: "Websso.Oid.dev.T266623", name: "T266623", disabled: true },
+        ],
       },
-      { id: 'magical.crystal-formations', name: 'Crystal Formations' }
-    ]
-  }
+      {
+        id: "Websso.Oid.prod",
+        name: "Oid.prod",
+        children: [
+          { id: "Websso.Oid.prod.T266624", name: "T266624", disabled: false },
+          { id: "Websso.Oid.prod.T266625", name: "T266625", disabled: true },
+        ],
+      },
+    ],
+  },
+  {
+    id: "plants",
+    name: "Plants",
+    children: [
+      { id: "plants.roses", name: "Roses" },
+      { id: "plants.sunflowers", name: "Sunflowers", disabled: true },
+      { id: "plants.lilies", name: "Lilies" },
+    ],
+  },
+  {
+    id: "magical",
+    name: "Magical Elements",
+    children: [
+      { id: "magical.fairy-lights", name: "Fairy Lights" },
+      { id: "magical.glowing-mushrooms", name: "Glowing Mushrooms" },
+      {
+        id: "magical.nested",
+        name: "Nested Magic",
+        children: [
+          { id: "magical.nested.item1", name: "Magic Item 1", disabled: true },
+          { id: "magical.nested.item2", name: "Magic Item 2", disabled: true },
+        ],
+      },
+      { id: "magical.crystal-formations", name: "Crystal Formations" },
+    ],
+  },
 ];
 
 const Home: React.FC = () => {
   const [selectedItems, setSelectedItems] = useState<string[]>([
-    'plants.roses',
-    'magical.fairy-lights'
+    "plants.roses",
+    "magical.fairy-lights",
   ]);
 
   const handleSelectionChange = (newSelectedItems: string[]) => {
     setSelectedItems(newSelectedItems);
-    console.log('Selected items:', newSelectedItems);
+    console.log("Selected items:", newSelectedItems);
   };
 
   // Create a display component for selected items
@@ -66,19 +74,20 @@ const Home: React.FC = () => {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {selectedItems.map(item => {
+        {selectedItems.map((item) => {
           // Extract just the last part of the ID for display
-          const parts = item.split('.');
-          const name = parts[parts.length - 1].split('-').map(
-            word => word.charAt(0).toUpperCase() + word.slice(1)
-          ).join(' ');
-          
-          let category = '';
-          if (parts[0] === 'Websso') category = 'Web SSO';
-          else if (parts[0] === 'plants') category = 'Plants';
-          else if (parts[0] === 'magical') category = 'Magical Elements';
-          else if (parts[0] === 'decorations') category = 'Decorations';
-          
+          const parts = item.split(".");
+          const name = parts[parts.length - 1]
+            .split("-")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+
+          let category = "";
+          if (parts[0] === "Websso") category = "Web SSO";
+          else if (parts[0] === "plants") category = "Plants";
+          else if (parts[0] === "magical") category = "Magical Elements";
+          else if (parts[0] === "decorations") category = "Decorations";
+
           return (
             <Card key={item} className="overflow-hidden">
               <CardContent className="p-4">
@@ -94,8 +103,10 @@ const Home: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6 max-w-screen-xl">
-      <h1 className="text-3xl font-bold mb-6 text-primary">CheckboxTree Component Demo</h1>
-      
+      <h1 className="text-3xl font-bold mb-6 text-primary">
+        CheckboxTree Component Demo
+      </h1>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1">
           <Card className="h-full">
@@ -109,7 +120,7 @@ const Home: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-        
+
         <div className="md:col-span-2">
           <Card>
             <CardContent className="p-6">
@@ -118,15 +129,17 @@ const Home: React.FC = () => {
               <SelectedItemsDisplay />
             </CardContent>
           </Card>
-          
+
           <Card className="mt-6">
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">Component Features</h2>
               <Separator className="mb-4" />
-              
+
               <ul className="list-disc pl-6 space-y-2">
                 <li>Search functionality to filter tree nodes</li>
-                <li>Hierarchical data selection with parent-child relationships</li>
+                <li>
+                  Hierarchical data selection with parent-child relationships
+                </li>
                 <li>Expandable/collapsible tree nodes</li>
                 <li>Visual indicators for selected and expanded states</li>
                 <li>Partial selection states for parent nodes</li>

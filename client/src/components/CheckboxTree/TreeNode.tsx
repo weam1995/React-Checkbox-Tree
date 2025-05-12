@@ -272,13 +272,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               ${effectivelyDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
           >
-            {searchTerm ? (
-              <span dangerouslySetInnerHTML={{ 
-                __html: item.name.replace(
-                  new RegExp(searchTerm, 'gi'), 
-                  match => `<span class="bg-yellow-200">${match}</span>`
-                ) 
-              }} />
+            {searchTerm && item.name.toLowerCase() === searchTerm.toLowerCase().trim() ? (
+              <span className="bg-yellow-200">{item.name}</span>
             ) : (
               item.name
             )}

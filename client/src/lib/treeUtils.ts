@@ -69,17 +69,23 @@ export function getAllParentIds(id: string): string[] {
 }
 
 /**
- * Check if a tree item matches the search term
+ * Check if a tree item matches the search term - only exact word matches, case insensitive
  */
 export function itemMatchesSearch(item: TreeItem, searchTerm: string, path: string = ''): boolean {
   if (!searchTerm) return true;
   
   const currentPath = path ? `${path}.${item.id}` : item.id;
-  const searchLower = searchTerm.toLowerCase();
+  const searchLower = searchTerm.toLowerCase().trim();
   
-  // Check if the current item matches
-  if (item.name.toLowerCase().includes(searchLower) || 
-      currentPath.toLowerCase().includes(searchLower)) {
+  // Check if the current item matches exactly
+  const itemNameLower = item.name.toLowerCase();
+  const itemIdLower = item.id.toLowerCase();
+  const currentPathLower = currentPath.toLowerCase();
+  
+  // Check for exact match - not substring matching
+  if (itemNameLower === searchLower || 
+      itemIdLower === searchLower || 
+      currentPathLower === searchLower) {
     return true;
   }
   

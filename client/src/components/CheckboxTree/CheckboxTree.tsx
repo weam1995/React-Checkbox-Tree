@@ -16,16 +16,6 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
   const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
   const [filteredItems, setFilteredItems] = useState(items);
 
-  // Log items structure for debugging
-  useEffect(() => {
-    // Display the structure of the first few items
-    console.log('Items structure:', items.map(item => ({
-      id: item.id,
-      name: item.name,
-      children: item.children?.map(c => ({ id: c.id, name: c.name }))
-    })));
-  }, []);
-
   // Filter items based on search term
   useEffect(() => {
     if (!searchTerm) {
@@ -147,36 +137,6 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
       
       // Find all matching nodes
       const matchingNodes = findAllMatches(allItems);
-      console.log('Matching nodes for search:', searchTerm, matchingNodes);
-      
-      // After examining the tree structure, we need to use exact IDs from the tree
-      if (searchTerm.toLowerCase().includes('t26')) {
-        // Force expand the specific nodes needed for T26* patterns using exact IDs from the tree
-        parentPathsToExpand.add('Websso');
-        
-        // For specific T number patterns, expand appropriate containers
-        if (searchTerm.toLowerCase().includes('t266')) {
-          const numberMatch = searchTerm.match(/t266(\d+)/i);
-          if (numberMatch && numberMatch[1]) {
-            const num = parseInt(numberMatch[1]);
-            console.log('T266 number:', num);
-            
-            // If searching for prod nodes (T266624, T266625)
-            if (num >= 24) {
-              parentPathsToExpand.add('Websso.Oid.prod');
-            }
-            
-            // If searching for dev nodes (T266622, T266623)
-            if (num <= 23) {
-              parentPathsToExpand.add('Websso.Oid.dev');
-            }
-          } else {
-            // If just "T266" with no specific number, expand both
-            parentPathsToExpand.add('Websso.Oid.prod');
-            parentPathsToExpand.add('Websso.Oid.dev');
-          }
-        }
-      }
       
       // For each matching node, add all of its parent paths
       matchingNodes.forEach(nodePath => {
@@ -191,8 +151,6 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
           currentPath = parentPath;
         }
       });
-      
-      console.log('Paths to expand:', Array.from(parentPathsToExpand));
       
       return parentPathsToExpand;
     };
@@ -229,17 +187,6 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     };
     
     findAndExpandAllNodes(filtered);
-    
-    // Make a final check for specific search patterns and ensure key nodes are expanded
-    if (searchTerm.toLowerCase().includes('t26')) {
-      // Because of how the tree is structured, we need to ensure these specific nodes are expanded
-      // For T26* searches, always expand Websso and relevant Oid nodes
-      nodesToExpand.add('Websso');
-      nodesToExpand.add('Websso.Oid.prod');
-      nodesToExpand.add('Websso.Oid.dev');
-      
-      console.log('Final expanded nodes:', Array.from(nodesToExpand));
-    }
     
     // Set the expanded nodes state
     setExpandedNodes(Array.from(nodesToExpand));

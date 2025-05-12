@@ -10,10 +10,33 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
   onSelectionChange,
   className = '',
   title,
+  treeIndex,
 }) => {
   const { searchTerm } = useTreeContext();
   const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
   const [filteredItems, setFilteredItems] = useState(items);
+  
+  // Communicate empty state to parent if needed
+  const notifyEmptyState = (isEmpty: boolean) => {
+    // Find the parent TreeFilterContext if available and report empty state
+    if (treeIndex === 1) {
+      const contextElement = document.querySelector('[data-tree-filter-context]');
+      if (contextElement) {
+        const context = (contextElement as any).__treeFilterContext;
+        if (context && context.setIsEmptyTree1) {
+          context.setIsEmptyTree1(isEmpty);
+        }
+      }
+    } else if (treeIndex === 2) {
+      const contextElement = document.querySelector('[data-tree-filter-context]');
+      if (contextElement) {
+        const context = (contextElement as any).__treeFilterContext;
+        if (context && context.setIsEmptyTree2) {
+          context.setIsEmptyTree2(isEmpty);
+        }
+      }
+    }
+  };
 
   // Filter items based on search term
   useEffect(() => {
@@ -91,6 +114,11 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     // Create the filtered tree
     const filtered = createFilteredTree(items);
     setFilteredItems(filtered);
+    
+    // Notify parent about empty state if needed
+    if (treeIndex) {
+      notifyEmptyState(filtered.length === 0);
+    }
     
     // Ensure all nodes in the filtered tree with children are expanded
     // and all parents of matching leaf nodes are expanded

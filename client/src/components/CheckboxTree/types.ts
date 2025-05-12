@@ -48,6 +48,10 @@ export interface CheckboxTreeProps {
    * Optional className for additional styling
    */
   className?: string;
+  /**
+   * Optional tree index for multi-tree coordination
+   */
+  treeIndex?: number;
 }
 
 /**

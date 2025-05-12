@@ -1,7 +1,18 @@
-import React, { useState } from "react";
-import { CheckboxTree, TreeItem, TreeProvider, SharedSearchBox } from "@/components/CheckboxTree";
+import React, { useState, createContext } from "react";
+import { CheckboxTree, TreeItem, TreeProvider, SharedSearchBox, useTreeContext } from "@/components/CheckboxTree";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+
+// Create a context to track which trees have no filtered results
+interface TreeFilterContextType {
+  setIsEmptyTree1: (isEmpty: boolean) => void;
+  setIsEmptyTree2: (isEmpty: boolean) => void;
+}
+
+export const TreeFilterContext = createContext<TreeFilterContextType>({
+  setIsEmptyTree1: () => {},
+  setIsEmptyTree2: () => {},
+});
 
 // Sample tree data for the first tree
 const treeDataOne: TreeItem[] = [
@@ -89,6 +100,10 @@ const treeDataTwo: TreeItem[] = [
 ];
 
 const Home: React.FC = () => {
+  // State for tracking empty trees
+  const [isTreeOneEmpty, setIsTreeOneEmpty] = useState(false);
+  const [isTreeTwoEmpty, setIsTreeTwoEmpty] = useState(false);
+  
   // State for first tree
   const [selectedItemsOne, setSelectedItemsOne] = useState<string[]>([
     "plants.roses",
@@ -188,21 +203,32 @@ const Home: React.FC = () => {
             </div>
             
             <div className="overflow-y-auto p-2 max-h-[calc(100vh-200px)]">
-              <div className="unified-tree">
-                <CheckboxTree
-                  items={treeDataOne}
-                  selectedItems={selectedItemsOne}
-                  onSelectionChange={handleSelectionChangeOne}
-                  className="mb-0 pb-0 border-b-0"
-                />
+              {/* Create a context value to track filtered items in both trees */}
+              <TreeFilterContext.Provider value={{ setIsEmptyTree1: setIsTreeOneEmpty, setIsEmptyTree2: setIsTreeTwoEmpty }}>
+                <div className="unified-tree">
+                  <CheckboxTree
+                    items={treeDataOne}
+                    selectedItems={selectedItemsOne}
+                    onSelectionChange={handleSelectionChangeOne}
+                    className="mb-0 pb-0 border-b-0"
+                    treeIndex={1}
+                  />
+                  
+                  <CheckboxTree
+                    items={treeDataTwo}
+                    selectedItems={selectedItemsTwo}
+                    onSelectionChange={handleSelectionChangeTwo}
+                    className="mt-0 pt-0 border-t-0"
+                    treeIndex={2}
+                  />
+                </div>
                 
-                <CheckboxTree
-                  items={treeDataTwo}
-                  selectedItems={selectedItemsTwo}
-                  onSelectionChange={handleSelectionChangeTwo}
-                  className="mt-0 pt-0 border-t-0"
-                />
-              </div>
+                {isTreeOneEmpty && isTreeTwoEmpty && (
+                  <div className="py-8 text-center text-gray-500">
+                    <p>No items found matching "{searchTerm}"</p>
+                  </div>
+                )}
+              </TreeFilterContext.Provider>
             </div>
           </div>
         </Card>

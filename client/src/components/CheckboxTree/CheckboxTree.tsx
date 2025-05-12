@@ -361,7 +361,6 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
                 item={item}
                 selectedItems={selectedItems}
                 onSelectionChange={handleSelectionChange}
-                searchTerm={searchTerm}
                 expandedNodes={expandedNodes}
                 onExpandToggle={handleExpandToggle}
               />

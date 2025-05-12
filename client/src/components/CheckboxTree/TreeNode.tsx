@@ -324,7 +324,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               item={child}
               selectedItems={selectedItems}
               onSelectionChange={onSelectionChange}
-              searchTerm={searchTerm}
               level={level + 1}
               expandedNodes={expandedNodes}
               onExpandToggle={onExpandToggle}

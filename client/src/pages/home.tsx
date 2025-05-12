@@ -23,7 +23,7 @@ const treeData: TreeItem[] = [
     name: 'Plants',
     children: [
       { id: 'plants.roses', name: 'Roses' },
-      { id: 'plants.sunflowers', name: 'Sunflowers' },
+      { id: 'plants.sunflowers', name: 'Sunflowers', disabled: true },
       { id: 'plants.lilies', name: 'Lilies' }
     ]
   },

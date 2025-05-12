@@ -54,6 +54,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   }, [hasChildren, item, selectedItems, isSelected]);
 
   const handleCheckboxChange = (checked: boolean) => {
+    // If this node is disabled, don't change anything
+    if (item.disabled) {
+      return;
+    }
+    
     let newSelectedItems = [...selectedItems];
     
     if (checked) {
@@ -63,13 +68,15 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           newSelectedItems.push(item.id);
         }
       } else {
-        // If this is a parent node, select all leaf nodes under it
+        // If this is a parent node, select all leaf nodes under it (except disabled ones)
         const leafNodeIds: string[] = [];
         
         const collectLeafNodeIds = (node: TreeItem) => {
           if (!node.children || node.children.length === 0) {
-            // This is a leaf node
-            leafNodeIds.push(node.id);
+            // This is a leaf node - only add if not disabled
+            if (!node.disabled) {
+              leafNodeIds.push(node.id);
+            }
           } else {
             // Process children
             node.children.forEach(child => {
@@ -93,13 +100,15 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       if (!hasChildren) {
         newSelectedItems = newSelectedItems.filter(id => id !== item.id);
       } else {
-        // If this is a parent node, deselect all leaf nodes under it
+        // If this is a parent node, deselect all leaf nodes under it (except disabled ones)
         const leafNodeIds: string[] = [];
         
         const collectLeafNodeIds = (node: TreeItem) => {
           if (!node.children || node.children.length === 0) {
-            // This is a leaf node
-            leafNodeIds.push(node.id);
+            // This is a leaf node - only process if not disabled
+            if (!node.disabled) {
+              leafNodeIds.push(node.id);
+            }
           } else {
             // Process children
             node.children.forEach(child => {
@@ -127,6 +136,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Don't respond to keyboard events if node is disabled
+    if (item.disabled) {
+      return;
+    }
+    
     if (e.key === 'Enter' || e.key === ' ') {
       if (hasChildren) {
         handleCheckboxChange(!isFullySelected);
@@ -183,14 +197,20 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 id={item.id}
                 checked={isFullySelected || (!hasChildren && isSelected)}
                 onCheckedChange={handleCheckboxChange}
+                disabled={item.disabled}
                 aria-label={`Select ${item.name}`}
-                className="h-4 w-4"
+                className={`h-4 w-4 ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               />
             )}
           </div>
           <label
             htmlFor={item.id}
-            className={`ml-2 text-gray-700 ${level === 0 ? 'font-medium' : ''} cursor-pointer`}
+            className={`
+              ml-2 
+              ${item.disabled ? 'text-gray-400' : 'text-gray-700'} 
+              ${level === 0 ? 'font-medium' : ''} 
+              ${item.disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
+            `}
           >
             {searchTerm ? (
               <span dangerouslySetInnerHTML={{ 

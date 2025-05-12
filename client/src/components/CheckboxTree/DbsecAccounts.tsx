@@ -23,16 +23,47 @@ const DbsecAccounts: React.FC<DbsecAccountsProps> = ({
   const [searchSelectedParentNodes, setSearchSelectedParentNodes] = useState<string[]>([]);
   const [previousSearch, setPreviousSearch] = useState<string>('');
 
+  // Helper function to get all child IDs of a parent
+  const getAllChildIds = (parentId: string): string[] => {
+    const parent = treeData.find(item => item.id === parentId);
+    if (!parent || !parent.children) return [];
+    
+    const childIds: string[] = [];
+    const processNode = (node: TreeItem) => {
+      if (!node.disabled) {
+        childIds.push(node.id);
+        
+        if (node.children) {
+          node.children.forEach(child => {
+            if (!child.disabled) {
+              processNode(child);
+            }
+          });
+        }
+      }
+    };
+    
+    parent.children.forEach(child => {
+      if (!child.disabled) {
+        childIds.push(child.id);
+        if (child.children) {
+          child.children.forEach(grandchild => processNode(grandchild));
+        }
+      }
+    });
+    
+    return childIds;
+  };
+
   // Handle selection changes
   const handleSelectionChange = (newSelectedItems: string[]) => {
     let finalSelection = [...newSelectedItems];
     
     // If we're currently searching, we need special handling
     if (searchTerm) {
-      // Find the parent nodes that were newly selected
       const previouslySelected = new Set(selectedItems);
       
-      // Find parent nodes that are in the new selection but weren't in the previous selection
+      // Find parent nodes that are newly SELECTED (added)
       const newlySelectedParentNodes = treeData
         .filter(item => 
           item.children && 
@@ -42,40 +73,18 @@ const DbsecAccounts: React.FC<DbsecAccountsProps> = ({
         )
         .map(item => item.id);
       
-      // For each newly selected parent, add all its children
+      // Find parent nodes that are newly DESELECTED (removed)
+      const newlyDeselectedParentNodes = treeData
+        .filter(item => 
+          item.children && 
+          item.children.length > 0 && 
+          !newSelectedItems.includes(item.id) && 
+          previouslySelected.has(item.id)
+        )
+        .map(item => item.id);
+      
+      // 1. Handle newly selected parent nodes - add all their children
       if (newlySelectedParentNodes.length > 0) {
-        // Function to get all child IDs of a parent 
-        const getAllChildIds = (parentId: string): string[] => {
-          const parent = treeData.find(item => item.id === parentId);
-          if (!parent || !parent.children) return [];
-          
-          const childIds: string[] = [];
-          const processNode = (node: TreeItem) => {
-            if (!node.disabled) {
-              childIds.push(node.id);
-              
-              if (node.children) {
-                node.children.forEach(child => {
-                  if (!child.disabled) {
-                    processNode(child);
-                  }
-                });
-              }
-            }
-          };
-          
-          parent.children.forEach(child => {
-            if (!child.disabled) {
-              childIds.push(child.id);
-              if (child.children) {
-                child.children.forEach(grandchild => processNode(grandchild));
-              }
-            }
-          });
-          
-          return childIds;
-        };
-        
         // Add all children of newly selected parents
         const childrenToAdd: string[] = [];
         newlySelectedParentNodes.forEach(parentId => {
@@ -87,6 +96,20 @@ const DbsecAccounts: React.FC<DbsecAccountsProps> = ({
         });
         
         finalSelection = [...finalSelection, ...childrenToAdd];
+      }
+      
+      // 2. Handle newly deselected parent nodes - remove all their children
+      if (newlyDeselectedParentNodes.length > 0) {
+        // Create a set of all child IDs that should be removed
+        const childrenToRemove = new Set<string>();
+        newlyDeselectedParentNodes.forEach(parentId => {
+          getAllChildIds(parentId).forEach(childId => {
+            childrenToRemove.add(childId);
+          });
+        });
+        
+        // Filter out all children that should be removed
+        finalSelection = finalSelection.filter(id => !childrenToRemove.has(id));
       }
       
       // Update our tracker with parent nodes for persistence after search is cleared

@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { CheckboxTreeProps, TreeItem } from './types';
-import SearchBox from './SearchBox';
 import TreeNode from './TreeNode';
 import { itemMatchesSearch, itemDirectlyMatchesSearch } from '@/lib/treeUtils';
+import { useTreeContext } from './TreeContext';
 
 const CheckboxTree: React.FC<CheckboxTreeProps> = ({
   items,
   selectedItems,
   onSelectionChange,
-  onSearch,
-  searchPlaceholder = 'Search elements...',
   className = '',
+  title,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const { searchTerm } = useTreeContext();
   const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
   const [filteredItems, setFilteredItems] = useState(items);
 
@@ -126,12 +125,7 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     setExpandedNodes(Array.from(nodesToExpand));
   }, [searchTerm, items]);
 
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
-    if (onSearch) {
-      onSearch(value);
-    }
-  };
+  // No longer need handleSearchChange - using context instead
 
   // Handle node expansion toggle
   const handleExpandToggle = (nodeId: string) => {
@@ -330,13 +324,11 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
 
   return (
     <div className={`checkbox-tree ${className}`}>
-      <div className="p-4 border-b">
-        <SearchBox
-          value={searchTerm}
-          onChange={handleSearchChange}
-          placeholder={searchPlaceholder}
-        />
-      </div>
+      {title && (
+        <div className="p-3 border-b bg-primary-50">
+          <h3 className="text-sm font-medium text-primary">{title}</h3>
+        </div>
+      )}
       
       <div className="p-2 border-b bg-gray-50 flex justify-between items-center">
         <span className="text-sm text-gray-500">

@@ -3,6 +3,7 @@ import { TreeNodeProps, TreeItem } from './types';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronDown, ChevronRight, CheckCircle, MinusCircle, InfoIcon } from 'lucide-react';
 import { highlightText } from '@/lib/treeUtils';
+import { useTreeContext } from './TreeContext';
 import {
   Tooltip,
   TooltipContent,
@@ -14,11 +15,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   item,
   selectedItems,
   onSelectionChange,
-  searchTerm = '',
   level = 0,
   expandedNodes,
   onExpandToggle,
 }) => {
+  const { searchTerm } = useTreeContext();
   const hasChildren = !!item.children && item.children.length > 0;
   const isExpanded = expandedNodes.includes(item.id);
   const isSelected = selectedItems.includes(item.id);

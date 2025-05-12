@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { CheckboxTree, TreeItem } from "@/components/CheckboxTree";
+import { CheckboxTree, TreeItem, TreeProvider, SharedSearchBox } from "@/components/CheckboxTree";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-// Sample tree data
-const treeData: TreeItem[] = [
+// Sample tree data for the first tree
+const treeDataOne: TreeItem[] = [
   {
     id: "Websso",
     name: "Websso",
@@ -55,49 +55,99 @@ const treeData: TreeItem[] = [
   },
 ];
 
+// Sample tree data for the second tree
+const treeDataTwo: TreeItem[] = [
+  {
+    id: "animals",
+    name: "Animals",
+    children: [
+      { id: "animals.mammals", name: "Mammals", 
+        children: [
+          { id: "animals.mammals.dog", name: "Dog" },
+          { id: "animals.mammals.cat", name: "Cat" },
+          { id: "animals.mammals.lion", name: "Lion", disabled: true },
+        ] 
+      },
+      { id: "animals.birds", name: "Birds",
+        children: [
+          { id: "animals.birds.eagle", name: "Eagle" },
+          { id: "animals.birds.sparrow", name: "Sparrow" },
+          { id: "animals.birds.penguin", name: "Penguin", disabled: true },
+        ]
+      },
+    ],
+  },
+  {
+    id: "technology",
+    name: "Technology",
+    children: [
+      { id: "technology.computers", name: "Computers" },
+      { id: "technology.phones", name: "Phones" },
+      { id: "technology.tablets", name: "Tablets", disabled: true },
+    ],
+  },
+];
+
 const Home: React.FC = () => {
-  const [selectedItems, setSelectedItems] = useState<string[]>([
+  // State for first tree
+  const [selectedItemsOne, setSelectedItemsOne] = useState<string[]>([
     "plants.roses",
     "magical.fairy-lights",
   ]);
 
-  const handleSelectionChange = (newSelectedItems: string[]) => {
-    setSelectedItems(newSelectedItems);
-    console.log("Selected items:", newSelectedItems);
+  // State for second tree
+  const [selectedItemsTwo, setSelectedItemsTwo] = useState<string[]>([
+    "animals.mammals.dog",
+    "technology.computers",
+  ]);
+
+  const handleSelectionChangeOne = (newSelectedItems: string[]) => {
+    setSelectedItemsOne(newSelectedItems);
+    console.log("Tree One - Selected items:", newSelectedItems);
+  };
+  
+  const handleSelectionChangeTwo = (newSelectedItems: string[]) => {
+    setSelectedItemsTwo(newSelectedItems);
+    console.log("Tree Two - Selected items:", newSelectedItems);
   };
 
   // Create a display component for selected items
-  const SelectedItemsDisplay = () => {
-    if (selectedItems.length === 0) {
+  const SelectedItemsDisplay = ({ items, title }: { items: string[], title: string }) => {
+    if (items.length === 0) {
       return <p className="text-gray-500 italic">No items selected</p>;
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {selectedItems.map((item) => {
-          // Extract just the last part of the ID for display
-          const parts = item.split(".");
-          const name = parts[parts.length - 1]
-            .split("-")
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ");
+      <>
+        <h3 className="text-md font-medium mb-2">{title}</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {items.map((item) => {
+            // Extract just the last part of the ID for display
+            const parts = item.split(".");
+            const name = parts[parts.length - 1]
+              .split("-")
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(" ");
 
-          let category = "";
-          if (parts[0] === "Websso") category = "Web SSO";
-          else if (parts[0] === "plants") category = "Plants";
-          else if (parts[0] === "magical") category = "Magical Elements";
-          else if (parts[0] === "decorations") category = "Decorations";
+            let category = "";
+            if (parts[0] === "Websso") category = "Web SSO";
+            else if (parts[0] === "plants") category = "Plants";
+            else if (parts[0] === "magical") category = "Magical Elements";
+            else if (parts[0] === "animals") category = "Animals";
+            else if (parts[0] === "technology") category = "Technology";
+            else category = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
 
-          return (
-            <Card key={item} className="overflow-hidden">
-              <CardContent className="p-4">
-                <h3 className="text-lg font-semibold text-primary">{name}</h3>
-                <p className="text-sm text-gray-500">{category}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+            return (
+              <Card key={item} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <h3 className="text-lg font-semibold text-primary">{name}</h3>
+                  <p className="text-sm text-gray-500">{category}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </>
     );
   };
 
@@ -106,16 +156,39 @@ const Home: React.FC = () => {
       <h1 className="text-3xl font-bold mb-6 text-primary">
         CheckboxTree Component Demo
       </h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1">
+      
+      <TreeProvider>
+        <div className="mb-6">
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <h2 className="text-xl font-semibold mb-4">Shared Search</h2>
+              <SharedSearchBox placeholder="Search across both trees..." />
+              <p className="text-sm text-gray-500 mt-2">
+                This search box filters content in both tree components below
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <Card className="h-full">
             <CardContent className="p-0">
               <CheckboxTree
-                items={treeData}
-                selectedItems={selectedItems}
-                onSelectionChange={handleSelectionChange}
-                searchPlaceholder="Search tree items..."
+                items={treeDataOne}
+                selectedItems={selectedItemsOne}
+                onSelectionChange={handleSelectionChangeOne}
+                title="Nature Elements"
+              />
+            </CardContent>
+          </Card>
+          
+          <Card className="h-full">
+            <CardContent className="p-0">
+              <CheckboxTree
+                items={treeDataTwo}
+                selectedItems={selectedItemsTwo}
+                onSelectionChange={handleSelectionChangeTwo}
+                title="Living & Technology"
               />
             </CardContent>
           </Card>
@@ -126,7 +199,11 @@ const Home: React.FC = () => {
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">Selected Items</h2>
               <Separator className="mb-4" />
-              <SelectedItemsDisplay />
+              <div className="grid grid-cols-1 gap-6">
+                <SelectedItemsDisplay items={selectedItemsOne} title="From Nature Elements" />
+                <Separator className="my-4" />
+                <SelectedItemsDisplay items={selectedItemsTwo} title="From Living & Technology" />
+              </div>
             </CardContent>
           </Card>
 
@@ -136,21 +213,20 @@ const Home: React.FC = () => {
               <Separator className="mb-4" />
 
               <ul className="list-disc pl-6 space-y-2">
-                <li>Search functionality to filter tree nodes</li>
-                <li>
-                  Hierarchical data selection with parent-child relationships
-                </li>
+                <li>Shared search filtering across multiple trees</li>
+                <li>Hierarchical data selection with parent-child relationships</li>
                 <li>Expandable/collapsible tree nodes</li>
                 <li>Visual indicators for selected and expanded states</li>
                 <li>Partial selection states for parent nodes</li>
                 <li>Keyboard navigation support</li>
                 <li>Search term highlighting</li>
+                <li>Info tooltips for disabled nodes</li>
                 <li>TypeScript interfaces for type safety</li>
               </ul>
             </CardContent>
           </Card>
         </div>
-      </div>
+      </TreeProvider>
     </div>
   );
 };

@@ -37,17 +37,13 @@ export interface CheckboxTreeProps {
    */
   selectedItems: string[];
   /**
-   * Optional function to handle search changes
-   */
-  onSearch?: (searchTerm: string) => void;
-  /**
    * Optional function to handle selection changes
    */
   onSelectionChange: (selectedItems: string[]) => void;
   /**
-   * Optional placeholder text for the search input
+   * Optional title for the tree
    */
-  searchPlaceholder?: string;
+  title?: string;
   /**
    * Optional className for additional styling
    */
@@ -92,10 +88,6 @@ export interface TreeNodeProps {
    * Function to handle selection changes
    */
   onSelectionChange: (selectedItems: string[]) => void;
-  /**
-   * Current search term for highlighting
-   */
-  searchTerm?: string;
   /**
    * Level of nesting (used for indentation)
    */

@@ -81,15 +81,17 @@ export function itemDirectlyMatchesSearch(item: TreeItem, searchTerm: string): b
   const itemIdLower = item.id.toLowerCase();
   const lastSegmentLower = item.id.split('.').pop()?.toLowerCase() || '';
   
-  // First check if this is a potential direct search for this exact node
-  if (searchLower.length > 5) { // If search term is long enough to potentially be a full node name
-    // For longer search terms, require exact matching
-    return searchLower === itemNameLower || 
-           searchLower === itemIdLower || 
-           searchLower === lastSegmentLower;
+  // For very specific, exact searches like "T266625"
+  if (searchLower.length >= 7) { // Full node ID length
+    // Check for exact match first
+    if (searchLower === itemNameLower || 
+        searchLower === itemIdLower || 
+        searchLower === lastSegmentLower) {
+      return true;
+    }
   }
   
-  // For partial searches (e.g., "T", "dev", "T2666"), use substring matching
+  // For all searches (both short and long), use substring/prefix matching
   return itemNameLower.includes(searchLower) || 
          itemIdLower.includes(searchLower) || 
          lastSegmentLower.includes(searchLower);

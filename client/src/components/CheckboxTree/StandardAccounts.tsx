@@ -25,18 +25,79 @@ const StandardAccounts: React.FC<StandardAccountsProps> = ({
 
   // Handle selection changes
   const handleSelectionChange = (newSelectedItems: string[]) => {
-    // If we're currently searching, we need to track any parent nodes that get selected
+    let finalSelection = [...newSelectedItems];
+    
+    // If we're currently searching, we need special handling
     if (searchTerm) {
-      // Find the parent nodes in the new selection
-      const parentNodes = treeData.filter(item => 
-        item.children && item.children.length > 0 && newSelectedItems.includes(item.id)
-      ).map(item => item.id);
+      // Find the parent nodes that were newly selected
+      const previouslySelected = new Set(selectedItems);
       
-      // Update our tracker with any new parent nodes
-      if (parentNodes.length > 0) {
+      // Find parent nodes that are in the new selection but weren't in the previous selection
+      const newlySelectedParentNodes = treeData
+        .filter(item => 
+          item.children && 
+          item.children.length > 0 && 
+          newSelectedItems.includes(item.id) && 
+          !previouslySelected.has(item.id)
+        )
+        .map(item => item.id);
+      
+      // For each newly selected parent, add all its children
+      if (newlySelectedParentNodes.length > 0) {
+        // Function to get all child IDs of a parent 
+        const getAllChildIds = (parentId: string): string[] => {
+          const parent = treeData.find(item => item.id === parentId);
+          if (!parent || !parent.children) return [];
+          
+          const childIds: string[] = [];
+          const processNode = (node: TreeItem) => {
+            if (!node.disabled) {
+              childIds.push(node.id);
+              
+              if (node.children) {
+                node.children.forEach(child => {
+                  if (!child.disabled) {
+                    processNode(child);
+                  }
+                });
+              }
+            }
+          };
+          
+          parent.children.forEach(child => {
+            if (!child.disabled) {
+              childIds.push(child.id);
+              if (child.children) {
+                child.children.forEach(grandchild => processNode(grandchild));
+              }
+            }
+          });
+          
+          return childIds;
+        };
+        
+        // Add all children of newly selected parents
+        const childrenToAdd: string[] = [];
+        newlySelectedParentNodes.forEach(parentId => {
+          getAllChildIds(parentId).forEach(childId => {
+            if (!finalSelection.includes(childId)) {
+              childrenToAdd.push(childId);
+            }
+          });
+        });
+        
+        finalSelection = [...finalSelection, ...childrenToAdd];
+      }
+      
+      // Update our tracker with parent nodes for persistence after search is cleared
+      const allParentNodes = treeData
+        .filter(item => item.children && item.children.length > 0 && finalSelection.includes(item.id))
+        .map(item => item.id);
+        
+      if (allParentNodes.length > 0) {
         setSearchSelectedParentNodes(prev => {
           const updatedList = [...prev];
-          parentNodes.forEach(parentId => {
+          allParentNodes.forEach(parentId => {
             if (!updatedList.includes(parentId)) {
               updatedList.push(parentId);
             }
@@ -46,8 +107,8 @@ const StandardAccounts: React.FC<StandardAccountsProps> = ({
       }
     }
     
-    dispatch(setSelectedItemsOne(newSelectedItems));
-    console.log("Standard Accounts - Selected items:", newSelectedItems);
+    dispatch(setSelectedItemsOne(finalSelection));
+    console.log("Standard Accounts - Selected items:", finalSelection);
   };
   
   // Effect to handle the search term changes

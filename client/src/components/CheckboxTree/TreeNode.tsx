@@ -1,8 +1,14 @@
 import React, { useMemo } from 'react';
 import { TreeNodeProps, TreeItem } from './types';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronDown, ChevronRight, CheckCircle, MinusCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle, MinusCircle, InfoIcon } from 'lucide-react';
 import { highlightText } from '@/lib/treeUtils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const TreeNode: React.FC<TreeNodeProps> = ({
   item,
@@ -263,27 +269,49 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               />
             )}
           </div>
-          <label
-            htmlFor={item.id}
-            className={`
-              ml-2 
-              ${effectivelyDisabled ? 'text-gray-400' : 'text-gray-700'} 
-              ${level === 0 ? 'font-medium' : ''} 
-              ${effectivelyDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}
-            `}
-          >
-            {searchTerm && searchTerm.trim() !== '' ? (
-              <>
-                {item.name.split(new RegExp(`(${searchTerm.trim()})`, 'i')).map((part, index) => 
-                  part.toLowerCase() === searchTerm.trim().toLowerCase() ? 
-                    <span key={index} className="bg-yellow-200">{part}</span> : 
-                    <span key={index}>{part}</span>
-                )}
-              </>
-            ) : (
-              item.name
+          <div className="flex items-center">
+            <label
+              htmlFor={item.id}
+              className={`
+                ml-2 
+                ${effectivelyDisabled ? 'text-gray-400' : 'text-gray-700'} 
+                ${level === 0 ? 'font-medium' : ''} 
+                ${effectivelyDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}
+              `}
+            >
+              {searchTerm && searchTerm.trim() !== '' ? (
+                <>
+                  {item.name.split(new RegExp(`(${searchTerm.trim()})`, 'i')).map((part, index) => 
+                    part.toLowerCase() === searchTerm.trim().toLowerCase() ? 
+                      <span key={index} className="bg-yellow-200">{part}</span> : 
+                      <span key={index}>{part}</span>
+                  )}
+                </>
+              ) : (
+                item.name
+              )}
+            </label>
+            
+            {effectivelyDisabled && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="ml-2 inline-flex items-center">
+                      <InfoIcon size={14} className="text-blue-500 cursor-help" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>This item is disabled and cannot be selected.</p>
+                    {item.disabled ? (
+                      <p className="text-xs mt-1 text-gray-500">This node is explicitly marked as disabled.</p>
+                    ) : (
+                      <p className="text-xs mt-1 text-gray-500">All children of this node are disabled.</p>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
-          </label>
+          </div>
         </div>
       </div>
       

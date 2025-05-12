@@ -272,7 +272,10 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               ${effectivelyDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
           >
-            {searchTerm && item.name.toLowerCase() === searchTerm.toLowerCase().trim() ? (
+            {searchTerm && (
+              item.name.toLowerCase() === searchTerm.toLowerCase().trim() || 
+              item.id.split('.').pop()?.toLowerCase() === searchTerm.toLowerCase().trim()
+            ) ? (
               <span className="bg-yellow-200">{item.name}</span>
             ) : (
               item.name

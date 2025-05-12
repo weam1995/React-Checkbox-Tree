@@ -77,15 +77,18 @@ export function itemMatchesSearch(item: TreeItem, searchTerm: string, path: stri
   const currentPath = path ? `${path}.${item.id}` : item.id;
   const searchLower = searchTerm.toLowerCase().trim();
   
-  // Check if the current item matches exactly
+  // Check if the current item matches exactly - either full name or ID
   const itemNameLower = item.name.toLowerCase();
   const itemIdLower = item.id.toLowerCase();
-  const currentPathLower = currentPath.toLowerCase();
+  const lastSegmentLower = item.id.split('.').pop()?.toLowerCase() || '';
   
-  // Check for exact match - not substring matching
+  // For exact matching we need to match:
+  // 1. Full name exact match (e.g., "T266624" matches node with name "T266624")
+  // 2. Full ID exact match (e.g., "Websso.Oid.prod.T266624" matches that exact ID)
+  // 3. Last segment of ID exact match (e.g., "T266624" matches "Websso.Oid.prod.T266624")
   if (itemNameLower === searchLower || 
       itemIdLower === searchLower || 
-      currentPathLower === searchLower) {
+      lastSegmentLower === searchLower) {
     return true;
   }
   

@@ -1,6 +1,7 @@
 import React from 'react';
 import { SearchIcon, XIcon } from 'lucide-react';
-import { useSharedTreeContext } from './SharedTreeContext';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { setSearchTerm } from '@/store/checkboxTreeSlice';
 
 interface SharedSearchBoxProps {
   placeholder?: string;
@@ -13,11 +14,12 @@ const SharedSearchBox: React.FC<SharedSearchBoxProps> = ({
   className = '',
   onChange,
 }) => {
-  const { searchTerm, setSearchTerm } = useSharedTreeContext();
+  const searchTerm = useAppSelector(state => state.checkboxTree.searchTerm);
+  const dispatch = useAppDispatch();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setSearchTerm(value);
+    dispatch(setSearchTerm(value));
     
     // Also notify parent component if callback is provided
     if (onChange) {
@@ -26,7 +28,7 @@ const SharedSearchBox: React.FC<SharedSearchBoxProps> = ({
   };
 
   const handleClear = () => {
-    setSearchTerm('');
+    dispatch(setSearchTerm(''));
     
     // Also notify parent component if callback is provided
     if (onChange) {

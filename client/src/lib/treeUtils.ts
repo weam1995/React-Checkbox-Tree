@@ -69,7 +69,7 @@ export function getAllParentIds(id: string): string[] {
 }
 
 /**
- * Check if a tree item matches the search term - only exact word matches, case insensitive
+ * Check if a tree item matches the search term - using substring matching, case insensitive
  */
 export function itemMatchesSearch(item: TreeItem, searchTerm: string, path: string = ''): boolean {
   if (!searchTerm) return true;
@@ -77,18 +77,18 @@ export function itemMatchesSearch(item: TreeItem, searchTerm: string, path: stri
   const currentPath = path ? `${path}.${item.id}` : item.id;
   const searchLower = searchTerm.toLowerCase().trim();
   
-  // Check if the current item matches exactly - either full name or ID
+  // Check if the current item contains the search term
   const itemNameLower = item.name.toLowerCase();
   const itemIdLower = item.id.toLowerCase();
   const lastSegmentLower = item.id.split('.').pop()?.toLowerCase() || '';
   
-  // For exact matching we need to match:
-  // 1. Full name exact match (e.g., "T266624" matches node with name "T266624")
-  // 2. Full ID exact match (e.g., "Websso.Oid.prod.T266624" matches that exact ID)
-  // 3. Last segment of ID exact match (e.g., "T266624" matches "Websso.Oid.prod.T266624")
-  if (itemNameLower === searchLower || 
-      itemIdLower === searchLower || 
-      lastSegmentLower === searchLower) {
+  // Check if the search term is a substring of:
+  // 1. The item name
+  // 2. The full item ID
+  // 3. The last segment of the ID
+  if (itemNameLower.includes(searchLower) || 
+      itemIdLower.includes(searchLower) || 
+      lastSegmentLower.includes(searchLower)) {
     return true;
   }
   

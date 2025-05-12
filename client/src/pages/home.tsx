@@ -170,29 +170,38 @@ const Home: React.FC = () => {
           </Card>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <Card className="h-full">
-            <CardContent className="p-0">
-              <CheckboxTree
-                items={treeDataOne}
-                selectedItems={selectedItemsOne}
-                onSelectionChange={handleSelectionChangeOne}
-                title="Nature Elements"
-              />
-            </CardContent>
-          </Card>
+        <Card className="mb-6 border-primary/20 bg-gradient-to-r from-primary-50 to-white">
+          <CardContent className="p-4 pb-0">
+            <h2 className="text-2xl font-semibold mb-2 text-primary">Nature Elements</h2>
+            <p className="text-sm text-gray-600 mb-4">Browse and select nature elements across two categories</p>
+          </CardContent>
           
-          <Card className="h-full">
-            <CardContent className="p-0">
-              <CheckboxTree
-                items={treeDataTwo}
-                selectedItems={selectedItemsTwo}
-                onSelectionChange={handleSelectionChangeTwo}
-                title="Living & Technology"
-              />
-            </CardContent>
-          </Card>
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
+            <Card className="h-full border-2 border-green-200 shadow-sm">
+              <div className="h-2 bg-gradient-to-r from-green-400 to-emerald-500"></div>
+              <CardContent className="p-0">
+                <CheckboxTree
+                  items={treeDataOne}
+                  selectedItems={selectedItemsOne}
+                  onSelectionChange={handleSelectionChangeOne}
+                  title="Plants & Magic"
+                />
+              </CardContent>
+            </Card>
+            
+            <Card className="h-full border-2 border-blue-200 shadow-sm">
+              <div className="h-2 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
+              <CardContent className="p-0">
+                <CheckboxTree
+                  items={treeDataTwo}
+                  selectedItems={selectedItemsTwo}
+                  onSelectionChange={handleSelectionChangeTwo}
+                  title="Animals & Tech"
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </Card>
 
         <div className="md:col-span-2">
           <Card>
@@ -200,9 +209,15 @@ const Home: React.FC = () => {
               <h2 className="text-xl font-semibold mb-4">Selected Items</h2>
               <Separator className="mb-4" />
               <div className="grid grid-cols-1 gap-6">
-                <SelectedItemsDisplay items={selectedItemsOne} title="From Nature Elements" />
-                <Separator className="my-4" />
-                <SelectedItemsDisplay items={selectedItemsTwo} title="From Living & Technology" />
+                <h3 className="text-lg font-medium">Nature Elements Selections</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <SelectedItemsDisplay items={selectedItemsOne} title="From Plants & Magic" />
+                  </div>
+                  <div>
+                    <SelectedItemsDisplay items={selectedItemsTwo} title="From Animals & Tech" />
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

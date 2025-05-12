@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckboxTreeProps, TreeItem } from './types';
 import TreeNode from './TreeNode';
 import { itemMatchesSearch, itemDirectlyMatchesSearch } from '@/lib/treeUtils';
-import { useTreeContext } from './TreeContext';
+import { useSharedTreeContext } from './SharedTreeContext';
 
 const CheckboxTree: React.FC<CheckboxTreeProps> = ({
   items,
@@ -12,29 +12,21 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
   title,
   treeIndex,
 }) => {
-  const { searchTerm } = useTreeContext();
+  const { 
+    searchTerm, 
+    setIsTreeOneEmpty, 
+    setIsTreeTwoEmpty 
+  } = useSharedTreeContext();
+  
   const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
   const [filteredItems, setFilteredItems] = useState(items);
   
   // Communicate empty state to parent if needed
   const notifyEmptyState = (isEmpty: boolean) => {
-    // Find the parent TreeFilterContext if available and report empty state
     if (treeIndex === 1) {
-      const contextElement = document.querySelector('[data-tree-filter-context]');
-      if (contextElement) {
-        const context = (contextElement as any).__treeFilterContext;
-        if (context && context.setIsEmptyTree1) {
-          context.setIsEmptyTree1(isEmpty);
-        }
-      }
+      setIsTreeOneEmpty(isEmpty);
     } else if (treeIndex === 2) {
-      const contextElement = document.querySelector('[data-tree-filter-context]');
-      if (contextElement) {
-        const context = (contextElement as any).__treeFilterContext;
-        if (context && context.setIsEmptyTree2) {
-          context.setIsEmptyTree2(isEmpty);
-        }
-      }
+      setIsTreeTwoEmpty(isEmpty);
     }
   };
 
@@ -116,8 +108,10 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     setFilteredItems(filtered);
     
     // Notify parent about empty state if needed
-    if (treeIndex) {
-      notifyEmptyState(filtered.length === 0);
+    if (treeIndex === 1) {
+      setIsTreeOneEmpty(filtered.length === 0);
+    } else if (treeIndex === 2) {
+      setIsTreeTwoEmpty(filtered.length === 0);
     }
     
     // Ensure all nodes in the filtered tree with children are expanded

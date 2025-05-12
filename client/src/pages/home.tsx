@@ -1,18 +1,13 @@
-import React, { useState, createContext } from "react";
-import { CheckboxTree, TreeItem, TreeProvider, SharedSearchBox, useTreeContext } from "@/components/CheckboxTree";
+import React, { useState } from "react";
+import { 
+  CheckboxTree, 
+  TreeItem, 
+  SharedTreeProvider, 
+  SharedSearchBox,
+  NoResultsMessage
+} from "@/components/CheckboxTree";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-
-// Create a context to track which trees have no filtered results
-interface TreeFilterContextType {
-  setIsEmptyTree1: (isEmpty: boolean) => void;
-  setIsEmptyTree2: (isEmpty: boolean) => void;
-}
-
-export const TreeFilterContext = createContext<TreeFilterContextType>({
-  setIsEmptyTree1: () => {},
-  setIsEmptyTree2: () => {},
-});
 
 // Sample tree data for the first tree
 const treeDataOne: TreeItem[] = [
@@ -100,10 +95,6 @@ const treeDataTwo: TreeItem[] = [
 ];
 
 const Home: React.FC = () => {
-  // State for tracking empty trees
-  const [isTreeOneEmpty, setIsTreeOneEmpty] = useState(false);
-  const [isTreeTwoEmpty, setIsTreeTwoEmpty] = useState(false);
-  
   // State for first tree
   const [selectedItemsOne, setSelectedItemsOne] = useState<string[]>([
     "plants.roses",
@@ -172,12 +163,14 @@ const Home: React.FC = () => {
         CheckboxTree Component Demo
       </h1>
       
-      <TreeProvider>
+      <SharedTreeProvider>
         <div className="mb-6">
           <Card className="mb-6">
             <CardContent className="p-4">
               <h2 className="text-xl font-semibold mb-4">Shared Search</h2>
-              <SharedSearchBox placeholder="Search across both trees..." />
+              <SharedSearchBox 
+                placeholder="Search across both trees..." 
+              />
               <p className="text-sm text-gray-500 mt-2">
                 This search box filters content in both tree components below
               </p>
@@ -192,10 +185,6 @@ const Home: React.FC = () => {
           </CardContent>
           
           <div className="flex flex-col">
-            <div className="p-4 border-b">
-              <SharedSearchBox placeholder="Search all nature elements..." />
-            </div>
-            
             <div className="p-2 border-b bg-gray-50 flex justify-between items-center">
               <span className="text-sm text-gray-500">
                 {selectedItemsOne.length + selectedItemsTwo.length} item{(selectedItemsOne.length + selectedItemsTwo.length) !== 1 ? 's' : ''} selected
@@ -203,32 +192,25 @@ const Home: React.FC = () => {
             </div>
             
             <div className="overflow-y-auto p-2 max-h-[calc(100vh-200px)]">
-              {/* Create a context value to track filtered items in both trees */}
-              <TreeFilterContext.Provider value={{ setIsEmptyTree1: setIsTreeOneEmpty, setIsEmptyTree2: setIsTreeTwoEmpty }}>
-                <div className="unified-tree">
-                  <CheckboxTree
-                    items={treeDataOne}
-                    selectedItems={selectedItemsOne}
-                    onSelectionChange={handleSelectionChangeOne}
-                    className="mb-0 pb-0 border-b-0"
-                    treeIndex={1}
-                  />
-                  
-                  <CheckboxTree
-                    items={treeDataTwo}
-                    selectedItems={selectedItemsTwo}
-                    onSelectionChange={handleSelectionChangeTwo}
-                    className="mt-0 pt-0 border-t-0"
-                    treeIndex={2}
-                  />
-                </div>
+              <div className="unified-tree">
+                <CheckboxTree
+                  items={treeDataOne}
+                  selectedItems={selectedItemsOne}
+                  onSelectionChange={handleSelectionChangeOne}
+                  className="mb-0 pb-0 border-b-0"
+                  treeIndex={1}
+                />
                 
-                {isTreeOneEmpty && isTreeTwoEmpty && (
-                  <div className="py-8 text-center text-gray-500">
-                    <p>No items found matching "{searchTerm}"</p>
-                  </div>
-                )}
-              </TreeFilterContext.Provider>
+                <CheckboxTree
+                  items={treeDataTwo}
+                  selectedItems={selectedItemsTwo}
+                  onSelectionChange={handleSelectionChangeTwo}
+                  className="mt-0 pt-0 border-t-0"
+                  treeIndex={2}
+                />
+                
+                <NoResultsMessage />
+              </div>
             </div>
           </div>
         </Card>
@@ -271,7 +253,7 @@ const Home: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-      </TreeProvider>
+      </SharedTreeProvider>
     </div>
   );
 };

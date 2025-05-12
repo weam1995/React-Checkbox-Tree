@@ -52,6 +52,10 @@ export interface CheckboxTreeProps {
    * Optional tree index for multi-tree coordination
    */
   treeIndex?: number;
+  /**
+   * Optional callback to notify parent when filtered items change
+   */
+  onFilteredItemsChange?: (items: TreeItem[]) => void;
 }
 
 /**

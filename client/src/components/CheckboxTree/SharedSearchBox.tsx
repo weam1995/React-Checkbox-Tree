@@ -1,24 +1,37 @@
 import React from 'react';
 import { SearchIcon, XIcon } from 'lucide-react';
-import { useTreeContext } from './TreeContext';
+import { useSharedTreeContext } from './SharedTreeContext';
 
 interface SharedSearchBoxProps {
   placeholder?: string;
   className?: string;
+  onChange?: (value: string) => void;
 }
 
 const SharedSearchBox: React.FC<SharedSearchBoxProps> = ({
   placeholder = 'Search...',
   className = '',
+  onChange,
 }) => {
-  const { searchTerm, setSearchTerm } = useTreeContext();
+  const { searchTerm, setSearchTerm } = useSharedTreeContext();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    // Also notify parent component if callback is provided
+    if (onChange) {
+      onChange(value);
+    }
   };
 
   const handleClear = () => {
     setSearchTerm('');
+    
+    // Also notify parent component if callback is provided
+    if (onChange) {
+      onChange('');
+    }
   };
 
   return (

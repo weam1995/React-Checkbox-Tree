@@ -72,9 +72,37 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     const filtered = createFilteredTree(items);
     setFilteredItems(filtered);
 
-    // Auto-expand all nodes in the filtered tree
+    // Auto-expand all nodes in the filtered tree AND all nodes that have matching children
     const nodesToExpand = new Set<string>();
     
+    // First pass: find all nodes that have matching descendants
+    const findNodesWithMatchingDescendants = (allItems: TreeItem[], searchTerm: string) => {
+      const nodeIdsWithMatches = new Set<string>();
+      
+      const traverse = (node: TreeItem, parentIds: string[] = []) => {
+        // Check if this node matches the search term
+        if (itemDirectlyMatchesSearch(node, searchTerm)) {
+          // If there's a match, mark all ancestors as having matching descendants
+          parentIds.forEach(id => nodeIdsWithMatches.add(id));
+        }
+        
+        // Recursively check children
+        if (node.children && node.children.length > 0) {
+          node.children.forEach(child => {
+            traverse(child, [...parentIds, node.id]);
+          });
+        }
+      };
+      
+      // Start traversal from all root nodes
+      allItems.forEach(item => traverse(item, []));
+      return nodeIdsWithMatches;
+    };
+    
+    // Get all node IDs that have matching descendants
+    const nodesWithMatchingDescendants = findNodesWithMatchingDescendants(items, searchTerm);
+    
+    // Second pass: mark all appropriate nodes for expansion
     const findAndExpandAllNodes = (items: TreeItem[], parentPath = '') => {
       items.forEach(item => {
         const fullPath = parentPath ? `${parentPath}.${item.id}` : item.id;
@@ -85,9 +113,15 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
           nodesToExpand.add(parts.slice(0, i).join('.'));
         }
         
-        // Add this node to be expanded if it has children
-        if (item.children?.length) {
+        // Add this node to be expanded if:
+        // 1. It has children in the filtered tree, OR
+        // 2. It has matching descendants in the full tree
+        if (item.children?.length || nodesWithMatchingDescendants.has(item.id)) {
           nodesToExpand.add(fullPath);
+        }
+        
+        // Recursively process children
+        if (item.children?.length) {
           findAndExpandAllNodes(item.children, fullPath);
         }
       });

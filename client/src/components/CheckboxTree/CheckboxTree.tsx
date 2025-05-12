@@ -39,6 +39,9 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     }
   };
 
+  // Keep track of parent nodes directly selected during search
+  const [searchSelectedParentNodes, setSearchSelectedParentNodes] = useState<string[]>([]);
+  
   // Filter items based on search term
   useEffect(() => {
     if (!searchTerm) {
@@ -179,17 +182,31 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
       // If the selected item is a direct parent of filtered items, we should select it
       const directParentSelection = newSelectedItems.filter(id => {
         // Check if this is a parent node by seeing if it exists in the original items
-        const isParentNode = items.find(item => item.id === id);
+        const isParentNode = items.some(item => item.id === id && (!item.children || item.children.length > 0));
         // If it's a parent node and not in the leaf nodes, add it
         return isParentNode && !leafNodesOnly.includes(id);
       });
       
+      // Update our tracking of parent nodes selected during search
+      setSearchSelectedParentNodes([...searchSelectedParentNodes, ...directParentSelection]);
+      
       // Combine both leaf nodes and parent nodes that were directly selected
       onSelectionChange([...leafNodesOnly, ...directParentSelection]);
     } else {
-      // Normal behavior when not searching - extract only leaf nodes
+      // Even when not searching, we want to include the parent nodes that were selected during search
       const leafNodesOnly = filterToLeafNodesOnly(newSelectedItems, items);
-      onSelectionChange(leafNodesOnly);
+      
+      // Add back any parent nodes that were explicitly selected during search
+      const finalSelection = [...leafNodesOnly];
+      
+      // Add parent nodes that were previously selected during search if they're in the current selection
+      searchSelectedParentNodes.forEach(parentId => {
+        if (newSelectedItems.includes(parentId) && !finalSelection.includes(parentId)) {
+          finalSelection.push(parentId);
+        }
+      });
+      
+      onSelectionChange(finalSelection);
     }
   };
   

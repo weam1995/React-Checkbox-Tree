@@ -272,14 +272,10 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               ${effectivelyDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
           >
-            {searchTerm && searchTerm.trim() !== '' ? (
-              <>
-                {item.name.split(new RegExp(`(${searchTerm.trim()})`, 'i')).map((part, index) => 
-                  part.toLowerCase() === searchTerm.trim().toLowerCase() ? 
-                    <span key={index} className="bg-yellow-200">{part}</span> : 
-                    <span key={index}>{part}</span>
-                )}
-              </>
+            {searchTerm && searchTerm.trim() !== '' && 
+             (item.name.toLowerCase() === searchTerm.trim().toLowerCase() ||
+              item.id.split('.').pop()?.toLowerCase() === searchTerm.trim().toLowerCase()) ? (
+              <span className="bg-yellow-200">{item.name}</span>
             ) : (
               item.name
             )}

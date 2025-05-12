@@ -69,7 +69,7 @@ export function getAllParentIds(id: string): string[] {
 }
 
 /**
- * Check if a tree item matches the search term - using substring matching, case insensitive
+ * Check if a tree item matches the search term exactly, case insensitive
  */
 export function itemMatchesSearch(item: TreeItem, searchTerm: string, path: string = ''): boolean {
   if (!searchTerm) return true;
@@ -77,18 +77,15 @@ export function itemMatchesSearch(item: TreeItem, searchTerm: string, path: stri
   const currentPath = path ? `${path}.${item.id}` : item.id;
   const searchLower = searchTerm.toLowerCase().trim();
   
-  // Check if the current item contains the search term
+  // Check if the current item is exactly the search term
   const itemNameLower = item.name.toLowerCase();
   const itemIdLower = item.id.toLowerCase();
   const lastSegmentLower = item.id.split('.').pop()?.toLowerCase() || '';
   
-  // Check if the search term is a substring of:
-  // 1. The item name
-  // 2. The full item ID
-  // 3. The last segment of the ID
-  if (itemNameLower.includes(searchLower) || 
-      itemIdLower.includes(searchLower) || 
-      lastSegmentLower.includes(searchLower)) {
+  // Check if the search term exactly matches this node
+  if (itemNameLower === searchLower || 
+      itemIdLower === searchLower || 
+      lastSegmentLower === searchLower) {
     return true;
   }
   

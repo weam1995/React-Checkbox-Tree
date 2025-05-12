@@ -245,8 +245,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         
         <div className="flex items-center ml-1">
           <div className="relative flex items-center">
-            {hasPartialSelection ? (
-              // Custom partial checkbox appearance
+            {hasPartialSelection && !effectivelyDisabled ? (
+              // Custom partial checkbox appearance - only for non-disabled nodes
               <div 
                 className="w-4 h-4 rounded-sm bg-primary/40 border border-primary/70 flex items-center justify-center cursor-pointer"
                 onClick={() => handleCheckboxChange(!isFullySelected)}
@@ -260,7 +260,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               // Regular checkbox
               <Checkbox
                 id={item.id}
-                checked={isFullySelected || (!hasChildren && isSelected)}
+                // Always show unchecked for disabled nodes
+                checked={effectivelyDisabled ? false : (isFullySelected || (!hasChildren && isSelected))}
                 onCheckedChange={handleCheckboxChange}
                 disabled={effectivelyDisabled}
                 aria-label={`Select ${item.name}`}

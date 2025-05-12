@@ -41,7 +41,6 @@ const treeData: TreeItem[] = [
 
 const Home: React.FC = () => {
   const [selectedItems, setSelectedItems] = useState<string[]>([
-    'Websso.Oid.dev.T266622',
     'plants.roses',
     'magical.fairy-lights'
   ]);

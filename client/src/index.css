@@ -56,3 +56,35 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* Custom styles for unified tree appearance */
+.unified-tree .checkbox-tree {
+  @apply border-0 rounded-none;
+}
+
+.unified-tree .checkbox-tree:first-child {
+  @apply rounded-t-md;
+}
+
+.unified-tree .checkbox-tree:last-child {
+  @apply rounded-b-md;
+}
+
+.unified-tree .checkbox-tree + .checkbox-tree {
+  @apply border-t-0;
+}
+
+.unified-tree .checkbox-tree-list {
+  @apply mt-0;
+}
+
+/* Remove space between trees */
+.unified-tree .checkbox-tree:not(:last-child) .checkbox-tree-list {
+  @apply mb-0 pb-0;
+}
+
+/* Add a subtle separator between trees */
+.unified-tree .checkbox-tree:not(:last-child)::after {
+  content: "";
+  @apply block border-b border-gray-200 mx-2;
+}

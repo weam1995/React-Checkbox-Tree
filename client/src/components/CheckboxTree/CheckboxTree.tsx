@@ -330,29 +330,7 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
         </div>
       )}
       
-      <div className="p-2 border-b bg-gray-50 flex justify-between items-center">
-        <span className="text-sm text-gray-500">
-          {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} selected
-        </span>
-        <div className="flex space-x-2">
-          <button
-            onClick={expandAll}
-            className="text-xs text-primary hover:text-primary/80 font-medium"
-            aria-label="Expand all nodes"
-          >
-            Expand All
-          </button>
-          <button
-            onClick={collapseAll}
-            className="text-xs text-primary hover:text-primary/80 font-medium"
-            aria-label="Collapse all nodes"
-          >
-            Collapse All
-          </button>
-        </div>
-      </div>
-      
-      <div className="overflow-y-auto p-2 max-h-[calc(100vh-200px)]">
+      <div className="overflow-y-auto p-2">
         {filteredItems.length > 0 ? (
           <ul className="checkbox-tree-list">
             {filteredItems.map(item => (

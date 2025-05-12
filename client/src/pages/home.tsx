@@ -170,36 +170,40 @@ const Home: React.FC = () => {
           </Card>
         </div>
         
-        <Card className="mb-6 border-primary/20 bg-gradient-to-r from-primary-50 to-white">
+        <Card className="mb-6">
           <CardContent className="p-4 pb-0">
             <h2 className="text-2xl font-semibold mb-2 text-primary">Nature Elements</h2>
-            <p className="text-sm text-gray-600 mb-4">Browse and select nature elements across two categories</p>
+            <p className="text-sm text-gray-600 mb-4">Browse and select from our comprehensive nature catalog</p>
           </CardContent>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
-            <Card className="h-full border-2 border-green-200 shadow-sm">
-              <div className="h-2 bg-gradient-to-r from-green-400 to-emerald-500"></div>
-              <CardContent className="p-0">
+          <div className="flex flex-col">
+            <div className="p-4 border-b">
+              <SharedSearchBox placeholder="Search all nature elements..." />
+            </div>
+            
+            <div className="p-2 border-b bg-gray-50 flex justify-between items-center">
+              <span className="text-sm text-gray-500">
+                {selectedItemsOne.length + selectedItemsTwo.length} item{(selectedItemsOne.length + selectedItemsTwo.length) !== 1 ? 's' : ''} selected
+              </span>
+            </div>
+            
+            <div className="overflow-y-auto p-2 max-h-[calc(100vh-200px)]">
+              <div className="unified-tree">
                 <CheckboxTree
                   items={treeDataOne}
                   selectedItems={selectedItemsOne}
                   onSelectionChange={handleSelectionChangeOne}
-                  title="Plants & Magic"
+                  className="mb-0 pb-0 border-b-0"
                 />
-              </CardContent>
-            </Card>
-            
-            <Card className="h-full border-2 border-blue-200 shadow-sm">
-              <div className="h-2 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
-              <CardContent className="p-0">
+                
                 <CheckboxTree
                   items={treeDataTwo}
                   selectedItems={selectedItemsTwo}
                   onSelectionChange={handleSelectionChangeTwo}
-                  title="Animals & Tech"
+                  className="mt-0 pt-0 border-t-0"
                 />
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </Card>
 

@@ -13,7 +13,8 @@ const treeData: TreeItem[] = [
         id: 'Websso.Oid.dev', 
         name: 'Oid.dev',
         children: [
-          { id: 'Websso.Oid.dev.T266622', name: 'T266622', disabled: true }
+          { id: 'Websso.Oid.dev.T266622', name: 'T266622', disabled: true },
+          { id: 'Websso.Oid.dev.T266623', name: 'T266623', disabled: true }
         ] 
       }
     ]

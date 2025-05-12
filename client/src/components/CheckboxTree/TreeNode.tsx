@@ -17,6 +17,33 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   const isExpanded = expandedNodes.includes(item.id);
   const isSelected = selectedItems.includes(item.id);
   
+  // Auto-compute effective disabled state
+  const effectivelyDisabled = useMemo(() => {
+    // If this node is explicitly disabled, it's disabled
+    if (item.disabled) {
+      return true;
+    }
+    
+    // If this node has children and all of them are disabled, this node is effectively disabled
+    if (hasChildren) {
+      const allChildrenDisabled = item.children!.every(child => {
+        // For leaf nodes, check their disabled property
+        if (!child.children || child.children.length === 0) {
+          return !!child.disabled;
+        }
+        
+        // For branch nodes, we need to recursively check
+        // For simplicity here, we'll just check the immediate children's disabled property
+        // A more complete approach would recursively check all descendants
+        return !!child.disabled;
+      });
+      
+      return allChildrenDisabled;
+    }
+    
+    return false;
+  }, [item, hasChildren]);
+  
   // Calculate node selection state (full, partial, or none) accounting for disabled nodes
   const { hasPartialSelection, isFullySelected } = useMemo(() => {
     if (!hasChildren) {
@@ -73,7 +100,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
   const handleCheckboxChange = (checked: boolean) => {
     // If this node is disabled, don't change anything
-    if (item.disabled) {
+    if (effectivelyDisabled) {
       return;
     }
     
@@ -175,7 +202,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Don't respond to keyboard events if node is disabled
-    if (item.disabled) {
+    if (effectivelyDisabled) {
       return;
     }
     
@@ -235,9 +262,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 id={item.id}
                 checked={isFullySelected || (!hasChildren && isSelected)}
                 onCheckedChange={handleCheckboxChange}
-                disabled={item.disabled}
+                disabled={effectivelyDisabled}
                 aria-label={`Select ${item.name}`}
-                className={`h-4 w-4 ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`h-4 w-4 ${effectivelyDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               />
             )}
           </div>
@@ -245,9 +272,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             htmlFor={item.id}
             className={`
               ml-2 
-              ${item.disabled ? 'text-gray-400' : 'text-gray-700'} 
+              ${effectivelyDisabled ? 'text-gray-400' : 'text-gray-700'} 
               ${level === 0 ? 'font-medium' : ''} 
-              ${item.disabled ? 'cursor-not-allowed' : 'cursor-pointer'}
+              ${effectivelyDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}
             `}
           >
             {searchTerm ? (

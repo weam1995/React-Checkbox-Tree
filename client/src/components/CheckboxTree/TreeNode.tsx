@@ -108,12 +108,14 @@ const TreeNode: React.FC<TreeNodeProps> = ({
     let newSelectedItems = [...selectedItems];
     
     if (checked) {
-      // If this is a leaf node, select it
-      if (!hasChildren) {
-        if (!newSelectedItems.includes(item.id)) {
-          newSelectedItems.push(item.id);
-        }
-      } else {
+      // Always add the current node (both parent and leaf nodes) to the selection
+      // This ensures parent nodes are selectable even during search
+      if (!newSelectedItems.includes(item.id)) {
+        newSelectedItems.push(item.id);
+      }
+      
+      // If this has children, also select all selectable children
+      if (hasChildren) {
         // If this is a parent node, select all non-disabled leaf nodes under it
         const selectableNodes: string[] = [];
         

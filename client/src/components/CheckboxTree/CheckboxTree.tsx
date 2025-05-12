@@ -171,11 +171,26 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
 
   // Handle selection changes - keeping only leaf nodes in the selection array
   const handleSelectionChange = (newSelectedItems: string[]) => {
-    // Extract only leaf nodes (nodes without children)
-    const leafNodesOnly = filterToLeafNodesOnly(newSelectedItems, items);
-    
-    // Pass the leaf nodes to the consumer
-    onSelectionChange(leafNodesOnly);
+    // If we're searching, we need to handle differently to ensure parent nodes can be selected
+    if (searchTerm) {
+      // When searching, we need to use the filtered items to determine what's a leaf node
+      const leafNodesOnly = filterToLeafNodesOnly(newSelectedItems, filteredItems);
+      
+      // If the selected item is a direct parent of filtered items, we should select it
+      const directParentSelection = newSelectedItems.filter(id => {
+        // Check if this is a parent node by seeing if it exists in the original items
+        const isParentNode = items.find(item => item.id === id);
+        // If it's a parent node and not in the leaf nodes, add it
+        return isParentNode && !leafNodesOnly.includes(id);
+      });
+      
+      // Combine both leaf nodes and parent nodes that were directly selected
+      onSelectionChange([...leafNodesOnly, ...directParentSelection]);
+    } else {
+      // Normal behavior when not searching - extract only leaf nodes
+      const leafNodesOnly = filterToLeafNodesOnly(newSelectedItems, items);
+      onSelectionChange(leafNodesOnly);
+    }
   };
   
   // Get all leaf nodes in the tree
@@ -219,8 +234,16 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     // Filter to include only leaf nodes from the selection
     return selectedIds.filter(id => {
       const node = nodeMap.get(id);
+      
+      // If we can't find the node in the current tree items (this can happen during search),
+      // then it could be a node from the original tree that's not in the filtered list
+      if (!node) {
+        // In this case, we'll assume it's a valid selection (especially for search cases)
+        return true;
+      }
+      
       // Include the ID if it's a leaf node (no children)
-      return node && (!node.children || node.children.length === 0);
+      return !node.children || node.children.length === 0;
     });
   };
   

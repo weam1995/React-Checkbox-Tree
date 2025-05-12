@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { CheckboxTreeProps, TreeItem } from './types';
 import SearchBox from './SearchBox';
 import TreeNode from './TreeNode';
-import { itemMatchesSearch } from '@/lib/treeUtils';
+import { itemMatchesSearch, itemDirectlyMatchesSearch } from '@/lib/treeUtils';
 
 const CheckboxTree: React.FC<CheckboxTreeProps> = ({
   items,
@@ -23,37 +23,78 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
       return;
     }
 
-    const filtered = items.filter(item => itemMatchesSearch(item, searchTerm));
-    setFilteredItems(filtered);
-
-    // Auto-expand nodes that match search criteria
-    if (searchTerm) {
-      const nodesToExpand = new Set<string>();
-      
-      const findAndMarkExpandableNodes = (items: typeof filteredItems, parentPath = '') => {
-        items.forEach(item => {
-          const fullPath = parentPath ? `${parentPath}.${item.id}` : item.id;
-          if (itemMatchesSearch(item, searchTerm)) {
-            // Add all parent paths to be expanded
-            const parts = fullPath.split('.');
-            for (let i = 1; i < parts.length; i++) {
-              nodesToExpand.add(parts.slice(0, i).join('.'));
-            }
-            // Add this node to be expanded if it has children
-            if (item.children?.length) {
-              nodesToExpand.add(fullPath);
-            }
+    // Create a filtered tree that only includes matching nodes and their parents
+    const createFilteredTree = (items: TreeItem[]): TreeItem[] => {
+      return items
+        .map(item => {
+          // Check if this item matches directly
+          const itemMatches = itemDirectlyMatchesSearch(item, searchTerm);
+          
+          // If it has children, filter them recursively
+          let filteredChildren: TreeItem[] = [];
+          
+          if (item.children && item.children.length > 0) {
+            // Only include children that match the search term directly
+            filteredChildren = item.children
+              .filter(child => itemDirectlyMatchesSearch(child, searchTerm) || 
+                               (child.children && child.children.length > 0 && 
+                                child.children.some(grandchild => itemMatchesSearch(grandchild, searchTerm))))
+              .map(child => {
+                // If this child has children, filter them recursively
+                if (child.children && child.children.length > 0) {
+                  return {
+                    ...child,
+                    children: createFilteredTree(child.children)
+                  };
+                }
+                // Leaf node that matches directly
+                return child;
+              });
           }
           
-          if (item.children?.length) {
-            findAndMarkExpandableNodes(item.children, fullPath);
+          // Keep this item if:
+          // 1. It matches the search directly, OR
+          // 2. It has children that match after filtering
+          if (itemMatches || filteredChildren.length > 0) {
+            return {
+              ...item,
+              children: filteredChildren
+            };
           }
-        });
-      };
-      
-      findAndMarkExpandableNodes(filtered);
-      setExpandedNodes(Array.from(nodesToExpand));
-    }
+          
+          // Filter out this item completely
+          return null;
+        })
+        .filter(Boolean) as TreeItem[]; // Remove null items
+    };
+    
+    // Apply the filtering
+    const filtered = createFilteredTree(items);
+    setFilteredItems(filtered);
+
+    // Auto-expand all nodes in the filtered tree
+    const nodesToExpand = new Set<string>();
+    
+    const findAndExpandAllNodes = (items: TreeItem[], parentPath = '') => {
+      items.forEach(item => {
+        const fullPath = parentPath ? `${parentPath}.${item.id}` : item.id;
+        
+        // Add all parent paths to be expanded
+        const parts = fullPath.split('.');
+        for (let i = 1; i < parts.length; i++) {
+          nodesToExpand.add(parts.slice(0, i).join('.'));
+        }
+        
+        // Add this node to be expanded if it has children
+        if (item.children?.length) {
+          nodesToExpand.add(fullPath);
+          findAndExpandAllNodes(item.children, fullPath);
+        }
+      });
+    };
+    
+    findAndExpandAllNodes(filtered);
+    setExpandedNodes(Array.from(nodesToExpand));
   }, [searchTerm, items]);
 
   const handleSearchChange = (value: string) => {

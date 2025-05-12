@@ -69,13 +69,11 @@ export function getAllParentIds(id: string): string[] {
 }
 
 /**
- * Check if a tree item matches the search term, case insensitive
- * Supports both substring matching and exact matching depending on context
+ * Check if a tree item directly matches the search term, without considering children
  */
-export function itemMatchesSearch(item: TreeItem, searchTerm: string, path: string = ''): boolean {
+export function itemDirectlyMatchesSearch(item: TreeItem, searchTerm: string): boolean {
   if (!searchTerm) return true;
   
-  const currentPath = path ? `${path}.${item.id}` : item.id;
   const searchLower = searchTerm.toLowerCase().trim();
   
   // Get item name and ID in lowercase for comparison
@@ -84,35 +82,35 @@ export function itemMatchesSearch(item: TreeItem, searchTerm: string, path: stri
   const lastSegmentLower = item.id.split('.').pop()?.toLowerCase() || '';
   
   // First check if this is a potential direct search for this exact node
-  // For example, searching for "T266625" should only match that specific node
   if (searchLower.length > 5) { // If search term is long enough to potentially be a full node name
-    const possibleExactMatch = 
-      searchLower === itemNameLower || 
-      searchLower === itemIdLower || 
-      searchLower === lastSegmentLower;
-    
-    // If this is an exact match, return true immediately
-    if (possibleExactMatch) return true;
-    
-    // For full specific searches, if we're not an exact match, only check children
-    // This prevents "T266625" from matching nodes "T266624" etc.
-    if (item.children) {
-      return item.children.some(child => itemMatchesSearch(child, searchTerm, currentPath));
-    }
-    return false;
+    // For longer search terms, require exact matching
+    return searchLower === itemNameLower || 
+           searchLower === itemIdLower || 
+           searchLower === lastSegmentLower;
   }
   
   // For partial searches (e.g., "T", "dev", "T2666"), use substring matching
-  if (itemNameLower.includes(searchLower) || 
-      itemIdLower.includes(searchLower) || 
-      lastSegmentLower.includes(searchLower)) {
+  return itemNameLower.includes(searchLower) || 
+         itemIdLower.includes(searchLower) || 
+         lastSegmentLower.includes(searchLower);
+}
+
+/**
+ * Check if a tree item matches the search term, case insensitive
+ * Supports both substring matching and exact matching depending on context
+ */
+export function itemMatchesSearch(item: TreeItem, searchTerm: string, path: string = ''): boolean {
+  if (!searchTerm) return true;
+  
+  // Check if this item directly matches
+  if (itemDirectlyMatchesSearch(item, searchTerm)) {
     return true;
   }
   
   // Check if any children match
   if (item.children) {
     return item.children.some(child => 
-      itemMatchesSearch(child, searchTerm, currentPath)
+      itemMatchesSearch(child, searchTerm)
     );
   }
   

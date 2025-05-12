@@ -17,32 +17,26 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   const isExpanded = expandedNodes.includes(item.id);
   const isSelected = selectedItems.includes(item.id);
   
-  // Auto-compute effective disabled state
-  const effectivelyDisabled = useMemo(() => {
-    // If this node is explicitly disabled, it's disabled
-    if (item.disabled) {
+  // Recursively check if a node is effectively disabled
+  const checkNodeDisabled = (node: TreeItem): boolean => {
+    // If the node is explicitly disabled, it's disabled
+    if (node.disabled) {
       return true;
     }
     
-    // If this node has children and all of them are disabled, this node is effectively disabled
-    if (hasChildren) {
-      const allChildrenDisabled = item.children!.every(child => {
-        // For leaf nodes, check their disabled property
-        if (!child.children || child.children.length === 0) {
-          return !!child.disabled;
-        }
-        
-        // For branch nodes, we need to recursively check
-        // For simplicity here, we'll just check the immediate children's disabled property
-        // A more complete approach would recursively check all descendants
-        return !!child.disabled;
-      });
-      
-      return allChildrenDisabled;
+    // If the node has no children, it's not disabled
+    if (!node.children || node.children.length === 0) {
+      return false;
     }
     
-    return false;
-  }, [item, hasChildren]);
+    // For parent nodes, check if ALL children are disabled (recursively)
+    return node.children.every(child => checkNodeDisabled(child));
+  };
+  
+  // Auto-compute effective disabled state
+  const effectivelyDisabled = useMemo(() => {
+    return checkNodeDisabled(item);
+  }, [item]);
   
   // Calculate node selection state (full, partial, or none) accounting for disabled nodes
   const { hasPartialSelection, isFullySelected } = useMemo(() => {

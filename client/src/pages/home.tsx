@@ -34,6 +34,14 @@ const treeData: TreeItem[] = [
     children: [
       { id: 'magical.fairy-lights', name: 'Fairy Lights' },
       { id: 'magical.glowing-mushrooms', name: 'Glowing Mushrooms' },
+      { 
+        id: 'magical.nested', 
+        name: 'Nested Magic',
+        children: [
+          { id: 'magical.nested.item1', name: 'Magic Item 1', disabled: true },
+          { id: 'magical.nested.item2', name: 'Magic Item 2', disabled: true }
+        ]
+      },
       { id: 'magical.crystal-formations', name: 'Crystal Formations' }
     ]
   }

@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { 
   CheckboxTree, 
   TreeItem, 
-  SharedTreeProvider, 
   SharedSearchBox,
   NoResultsMessage
 } from "@/components/CheckboxTree";
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { setSelectedItemsOne, setSelectedItemsTwo } from '@/store/checkboxTreeSlice';
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
@@ -95,25 +96,19 @@ const treeDataTwo: TreeItem[] = [
 ];
 
 const Home: React.FC = () => {
-  // State for first tree
-  const [selectedItemsOne, setSelectedItemsOne] = useState<string[]>([
-    "plants.roses",
-    "magical.fairy-lights",
-  ]);
-
-  // State for second tree
-  const [selectedItemsTwo, setSelectedItemsTwo] = useState<string[]>([
-    "animals.mammals.dog",
-    "technology.computers",
-  ]);
+  const dispatch = useAppDispatch();
+  
+  // Get selected items from Redux store
+  const selectedItemsOne = useAppSelector(state => state.checkboxTree.selectedItemsOne);
+  const selectedItemsTwo = useAppSelector(state => state.checkboxTree.selectedItemsTwo);
 
   const handleSelectionChangeOne = (newSelectedItems: string[]) => {
-    setSelectedItemsOne(newSelectedItems);
+    dispatch(setSelectedItemsOne(newSelectedItems));
     console.log("Tree One - Selected items:", newSelectedItems);
   };
   
   const handleSelectionChangeTwo = (newSelectedItems: string[]) => {
-    setSelectedItemsTwo(newSelectedItems);
+    dispatch(setSelectedItemsTwo(newSelectedItems));
     console.log("Tree Two - Selected items:", newSelectedItems);
   };
 
@@ -163,97 +158,95 @@ const Home: React.FC = () => {
         CheckboxTree Component Demo
       </h1>
       
-      <SharedTreeProvider>
-        <div className="mb-6">
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <h2 className="text-xl font-semibold mb-4">Shared Search</h2>
-              <SharedSearchBox 
-                placeholder="Search across both trees..." 
-              />
-              <p className="text-sm text-gray-500 mt-2">
-                This search box filters content in both tree components below
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-        
+      <div className="mb-6">
         <Card className="mb-6">
-          <CardContent className="p-4 pb-0">
-            <h2 className="text-2xl font-semibold mb-2 text-primary">Nature Elements</h2>
-            <p className="text-sm text-gray-600 mb-4">Browse and select from our comprehensive nature catalog</p>
+          <CardContent className="p-4">
+            <h2 className="text-xl font-semibold mb-4">Shared Search</h2>
+            <SharedSearchBox 
+              placeholder="Search across both trees..." 
+            />
+            <p className="text-sm text-gray-500 mt-2">
+              This search box filters content in both tree components below
+            </p>
           </CardContent>
+        </Card>
+      </div>
+      
+      <Card className="mb-6">
+        <CardContent className="p-4 pb-0">
+          <h2 className="text-2xl font-semibold mb-2 text-primary">Nature Elements</h2>
+          <p className="text-sm text-gray-600 mb-4">Browse and select from our comprehensive nature catalog</p>
+        </CardContent>
+        
+        <div className="flex flex-col">
+          <div className="p-2 border-b bg-gray-50 flex justify-between items-center">
+            <span className="text-sm text-gray-500">
+              {selectedItemsOne.length + selectedItemsTwo.length} item{(selectedItemsOne.length + selectedItemsTwo.length) !== 1 ? 's' : ''} selected
+            </span>
+          </div>
           
-          <div className="flex flex-col">
-            <div className="p-2 border-b bg-gray-50 flex justify-between items-center">
-              <span className="text-sm text-gray-500">
-                {selectedItemsOne.length + selectedItemsTwo.length} item{(selectedItemsOne.length + selectedItemsTwo.length) !== 1 ? 's' : ''} selected
-              </span>
-            </div>
-            
-            <div className="overflow-y-auto p-2 max-h-[calc(100vh-200px)]">
-              <div className="unified-tree">
-                <CheckboxTree
-                  items={treeDataOne}
-                  selectedItems={selectedItemsOne}
-                  onSelectionChange={handleSelectionChangeOne}
-                  className="mb-0 pb-0 border-b-0"
-                  treeIndex={1}
-                />
-                
-                <CheckboxTree
-                  items={treeDataTwo}
-                  selectedItems={selectedItemsTwo}
-                  onSelectionChange={handleSelectionChangeTwo}
-                  className="mt-0 pt-0 border-t-0"
-                  treeIndex={2}
-                />
-                
-                <NoResultsMessage />
-              </div>
+          <div className="overflow-y-auto p-2 max-h-[calc(100vh-200px)]">
+            <div className="unified-tree">
+              <CheckboxTree
+                items={treeDataOne}
+                selectedItems={selectedItemsOne}
+                onSelectionChange={handleSelectionChangeOne}
+                className="mb-0 pb-0 border-b-0"
+                treeIndex={1}
+              />
+              
+              <CheckboxTree
+                items={treeDataTwo}
+                selectedItems={selectedItemsTwo}
+                onSelectionChange={handleSelectionChangeTwo}
+                className="mt-0 pt-0 border-t-0"
+                treeIndex={2}
+              />
+              
+              <NoResultsMessage />
             </div>
           </div>
-        </Card>
+        </div>
+      </Card>
 
-        <div className="md:col-span-2">
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Selected Items</h2>
-              <Separator className="mb-4" />
-              <div className="grid grid-cols-1 gap-6">
-                <h3 className="text-lg font-medium">Nature Elements Selections</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <SelectedItemsDisplay items={selectedItemsOne} title="From Plants & Magic" />
-                  </div>
-                  <div>
-                    <SelectedItemsDisplay items={selectedItemsTwo} title="From Animals & Tech" />
-                  </div>
+      <div className="md:col-span-2">
+        <Card>
+          <CardContent className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Selected Items</h2>
+            <Separator className="mb-4" />
+            <div className="grid grid-cols-1 gap-6">
+              <h3 className="text-lg font-medium">Nature Elements Selections</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <SelectedItemsDisplay items={selectedItemsOne} title="From Plants & Magic" />
+                </div>
+                <div>
+                  <SelectedItemsDisplay items={selectedItemsTwo} title="From Animals & Tech" />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="mt-6">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Component Features</h2>
-              <Separator className="mb-4" />
+        <Card className="mt-6">
+          <CardContent className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Component Features</h2>
+            <Separator className="mb-4" />
 
-              <ul className="list-disc pl-6 space-y-2">
-                <li>Shared search filtering across multiple trees</li>
-                <li>Hierarchical data selection with parent-child relationships</li>
-                <li>Expandable/collapsible tree nodes</li>
-                <li>Visual indicators for selected and expanded states</li>
-                <li>Partial selection states for parent nodes</li>
-                <li>Keyboard navigation support</li>
-                <li>Search term highlighting</li>
-                <li>Info tooltips for disabled nodes</li>
-                <li>TypeScript interfaces for type safety</li>
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-      </SharedTreeProvider>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Shared search filtering across multiple trees</li>
+              <li>Hierarchical data selection with parent-child relationships</li>
+              <li>Expandable/collapsible tree nodes</li>
+              <li>Visual indicators for selected and expanded states</li>
+              <li>Partial selection states for parent nodes</li>
+              <li>Keyboard navigation support</li>
+              <li>Search term highlighting</li>
+              <li>Info tooltips for disabled nodes</li>
+              <li>TypeScript interfaces for type safety</li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

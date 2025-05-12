@@ -2,7 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { CheckboxTreeProps, TreeItem } from './types';
 import TreeNode from './TreeNode';
 import { itemMatchesSearch, itemDirectlyMatchesSearch } from '@/lib/treeUtils';
-import { useSharedTreeContext } from './SharedTreeContext';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { 
+  setIsTreeOneEmpty, 
+  setIsTreeTwoEmpty,
+  setExpandedNodesOne,
+  setExpandedNodesTwo,
+  toggleNodeExpansionOne,
+  toggleNodeExpansionTwo
+} from '@/store/checkboxTreeSlice';
 
 const CheckboxTree: React.FC<CheckboxTreeProps> = ({
   items,
@@ -12,21 +20,22 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
   title,
   treeIndex,
 }) => {
-  const { 
-    searchTerm, 
-    setIsTreeOneEmpty, 
-    setIsTreeTwoEmpty 
-  } = useSharedTreeContext();
+  const searchTerm = useAppSelector(state => state.checkboxTree.searchTerm);
+  const expandedNodesOne = useAppSelector(state => state.checkboxTree.expandedNodesOne);
+  const expandedNodesTwo = useAppSelector(state => state.checkboxTree.expandedNodesTwo);
+  const dispatch = useAppDispatch();
   
-  const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
   const [filteredItems, setFilteredItems] = useState(items);
   
-  // Communicate empty state to parent if needed
-  const notifyEmptyState = (isEmpty: boolean) => {
+  // Get the correct expanded nodes based on tree index
+  const expandedNodes = treeIndex === 1 ? expandedNodesOne : expandedNodesTwo;
+  
+  // Handle toggling node expansion
+  const handleToggleExpand = (nodeId: string) => {
     if (treeIndex === 1) {
-      setIsTreeOneEmpty(isEmpty);
+      dispatch(toggleNodeExpansionOne(nodeId));
     } else if (treeIndex === 2) {
-      setIsTreeTwoEmpty(isEmpty);
+      dispatch(toggleNodeExpansionTwo(nodeId));
     }
   };
 
@@ -109,9 +118,9 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     
     // Notify parent about empty state if needed
     if (treeIndex === 1) {
-      setIsTreeOneEmpty(filtered.length === 0);
+      dispatch(setIsTreeOneEmpty(filtered.length === 0));
     } else if (treeIndex === 2) {
-      setIsTreeTwoEmpty(filtered.length === 0);
+      dispatch(setIsTreeTwoEmpty(filtered.length === 0));
     }
     
     // Ensure all nodes in the filtered tree with children are expanded
@@ -144,18 +153,20 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     });
     
     // Set the expanded nodes state
-    setExpandedNodes(Array.from(nodesToExpand));
-  }, [searchTerm, items]);
+    const expansionArray = Array.from(nodesToExpand);
+    if (treeIndex === 1) {
+      dispatch(setExpandedNodesOne(expansionArray));
+    } else if (treeIndex === 2) {
+      dispatch(setExpandedNodesTwo(expansionArray));
+    }
+  }, [searchTerm, items, dispatch, treeIndex]);
 
-  // No longer need handleSearchChange - using context instead
+  // No longer need handleSearchChange - using Redux now
 
   // Handle node expansion toggle
   const handleExpandToggle = (nodeId: string) => {
-    setExpandedNodes(prev => 
-      prev.includes(nodeId)
-        ? prev.filter(id => id !== nodeId)
-        : [...prev, nodeId]
-    );
+    // Using the helper function we created earlier
+    handleToggleExpand(nodeId);
   };
 
   // Handle selection changes - keeping only leaf nodes in the selection array
@@ -336,12 +347,23 @@ const CheckboxTree: React.FC<CheckboxTreeProps> = ({
     };
     
     collectNodes(items);
-    setExpandedNodes(allExpandableNodes);
+    
+    // Update the Redux store based on tree index
+    if (treeIndex === 1) {
+      dispatch(setExpandedNodesOne(allExpandableNodes));
+    } else if (treeIndex === 2) {
+      dispatch(setExpandedNodesTwo(allExpandableNodes));
+    }
   };
 
   // Helper to collapse all nodes
   const collapseAll = () => {
-    setExpandedNodes([]);
+    // Update the Redux store based on tree index
+    if (treeIndex === 1) {
+      dispatch(setExpandedNodesOne([]));
+    } else if (treeIndex === 2) {
+      dispatch(setExpandedNodesTwo([]));
+    }
   };
 
   return (

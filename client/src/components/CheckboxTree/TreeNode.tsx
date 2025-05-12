@@ -3,7 +3,7 @@ import { TreeNodeProps, TreeItem } from './types';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronDown, ChevronRight, CheckCircle, MinusCircle, InfoIcon } from 'lucide-react';
 import { highlightText } from '@/lib/treeUtils';
-import { useSharedTreeContext } from './SharedTreeContext';
+import { useAppSelector } from '@/store/hooks';
 import {
   Tooltip,
   TooltipContent,
@@ -19,7 +19,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   expandedNodes,
   onExpandToggle,
 }) => {
-  const { searchTerm } = useSharedTreeContext();
+  const searchTerm = useAppSelector(state => state.checkboxTree.searchTerm);
   const hasChildren = !!item.children && item.children.length > 0;
   const isExpanded = expandedNodes.includes(item.id);
   const isSelected = selectedItems.includes(item.id);

@@ -17,40 +17,58 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   const isExpanded = expandedNodes.includes(item.id);
   const isSelected = selectedItems.includes(item.id);
   
-  // Calculate node selection state (full, partial, or none)
+  // Calculate node selection state (full, partial, or none) accounting for disabled nodes
   const { hasPartialSelection, isFullySelected } = useMemo(() => {
     if (!hasChildren) {
       return { hasPartialSelection: false, isFullySelected: isSelected };
     }
     
-    // Find all leaf nodes under this node
-    const leafNodeIds: string[] = [];
+    // Find all selectable leaf nodes under this node (exclude disabled ones)
+    const selectableLeafNodes: string[] = [];
+    const allLeafNodes: string[] = [];
     
     const collectLeafNodeIds = (node: TreeItem) => {
       if (!node.children || node.children.length === 0) {
-        leafNodeIds.push(node.id);
+        // Always add to allLeafNodes for reference
+        allLeafNodes.push(node.id);
+        
+        // Only add to selectable if not disabled
+        if (!node.disabled) {
+          selectableLeafNodes.push(node.id);
+        }
       } else {
-        node.children.forEach(child => collectLeafNodeIds(child));
+        // Process children, skipping disabled branches
+        node.children.forEach(child => {
+          // Process all children even if disabled (for visual state purposes)
+          collectLeafNodeIds(child);
+        });
       }
     };
     
     // Start with the current node's children
     item.children!.forEach(child => collectLeafNodeIds(child));
     
-    // Count how many leaf nodes are selected
-    const selectedLeafNodes = leafNodeIds.filter(id => selectedItems.includes(id));
+    // Count how many selectable leaf nodes are selected
+    const selectedLeafNodes = selectableLeafNodes.filter(id => selectedItems.includes(id));
     
     // Determine selection states
-    const hasSelectedLeafNodes = selectedLeafNodes.length > 0;
-    const allLeafNodesSelected = selectedLeafNodes.length === leafNodeIds.length;
+    const hasAnyLeafNodeSelected = allLeafNodes.some(id => selectedItems.includes(id));
+    const hasSelectedSelectableNodes = selectedLeafNodes.length > 0;
     
-    // A node is partially selected if some but not all of its leaf descendants are selected
-    const hasPartialSelection = hasSelectedLeafNodes && !allLeafNodesSelected;
+    // A parent is fully selected when all its *selectable* (non-disabled) leaf descendants are selected
+    const allSelectableNodesSelected = selectableLeafNodes.length > 0 && 
+                                       selectedLeafNodes.length === selectableLeafNodes.length;
     
-    // A node is fully selected if all its leaf descendants are selected
-    const isFullySelected = allLeafNodesSelected;
+    // A parent is partially selected if:
+    // 1. Some but not all selectable nodes are selected, OR
+    // 2. No selectable nodes exist but some disabled descendants are selected
+    const partiallySelected = (hasSelectedSelectableNodes && !allSelectableNodesSelected) || 
+                              (selectableLeafNodes.length === 0 && hasAnyLeafNodeSelected);
     
-    return { hasPartialSelection, isFullySelected };
+    return { 
+      hasPartialSelection: partiallySelected, 
+      isFullySelected: allSelectableNodesSelected
+    };
   }, [hasChildren, item, selectedItems, isSelected]);
 
   const handleCheckboxChange = (checked: boolean) => {
@@ -68,28 +86,38 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           newSelectedItems.push(item.id);
         }
       } else {
-        // If this is a parent node, select all leaf nodes under it (except disabled ones)
-        const leafNodeIds: string[] = [];
+        // If this is a parent node, select all non-disabled leaf nodes under it
+        const selectableNodes: string[] = [];
         
-        const collectLeafNodeIds = (node: TreeItem) => {
+        // Find all selectable nodes (non-disabled leaf nodes)
+        const findSelectableNodes = (node: TreeItem) => {
           if (!node.children || node.children.length === 0) {
             // This is a leaf node - only add if not disabled
             if (!node.disabled) {
-              leafNodeIds.push(node.id);
+              selectableNodes.push(node.id);
             }
           } else {
-            // Process children
+            // Process children for non-disabled parent nodes
             node.children.forEach(child => {
-              collectLeafNodeIds(child);
+              // Skip this branch if the direct child is disabled
+              if (!child.disabled) {
+                // If it's a leaf node add it directly
+                if (!child.children || child.children.length === 0) {
+                  selectableNodes.push(child.id);
+                } else {
+                  // Process this child's children recursively
+                  findSelectableNodes(child);
+                }
+              }
             });
           }
         };
         
-        // Start collection with this node
-        collectLeafNodeIds(item);
+        // Start collection with this node's children
+        findSelectableNodes(item);
         
-        // Add all leaf node IDs to the selection
-        leafNodeIds.forEach(id => {
+        // Add all selectable node IDs to the selection
+        selectableNodes.forEach(id => {
           if (!newSelectedItems.includes(id)) {
             newSelectedItems.push(id);
           }
@@ -100,28 +128,38 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       if (!hasChildren) {
         newSelectedItems = newSelectedItems.filter(id => id !== item.id);
       } else {
-        // If this is a parent node, deselect all leaf nodes under it (except disabled ones)
-        const leafNodeIds: string[] = [];
+        // If this is a parent node, deselect all non-disabled leaf nodes under it
+        const selectableNodes: string[] = [];
         
-        const collectLeafNodeIds = (node: TreeItem) => {
+        // Find all selectable nodes (non-disabled leaf nodes)
+        const findSelectableNodes = (node: TreeItem) => {
           if (!node.children || node.children.length === 0) {
-            // This is a leaf node - only process if not disabled
+            // This is a leaf node - only add if not disabled
             if (!node.disabled) {
-              leafNodeIds.push(node.id);
+              selectableNodes.push(node.id);
             }
           } else {
-            // Process children
+            // Process children for non-disabled parent nodes
             node.children.forEach(child => {
-              collectLeafNodeIds(child);
+              // Skip this branch if the direct child is disabled
+              if (!child.disabled) {
+                // If it's a leaf node add it directly
+                if (!child.children || child.children.length === 0) {
+                  selectableNodes.push(child.id);
+                } else {
+                  // Process this child's children recursively
+                  findSelectableNodes(child);
+                }
+              }
             });
           }
         };
         
-        // Start collection with this node
-        collectLeafNodeIds(item);
+        // Start collection with this node's children
+        findSelectableNodes(item);
         
-        // Remove all leaf node IDs from the selection
-        newSelectedItems = newSelectedItems.filter(id => !leafNodeIds.includes(id));
+        // Remove all selectable node IDs from the selection
+        newSelectedItems = newSelectedItems.filter(id => !selectableNodes.includes(id));
       }
     }
     

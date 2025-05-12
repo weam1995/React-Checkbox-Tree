@@ -1,12 +1,9 @@
 import React from "react";
 import { 
-  CheckboxTree, 
   TreeItem, 
-  SharedSearchBox,
-  NoResultsMessage
+  CheckboxTrees
 } from "@/components/CheckboxTree";
-import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { setSelectedItemsOne, setSelectedItemsTwo } from '@/store/checkboxTreeSlice';
+import { useAppSelector } from '@/store/hooks';
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
@@ -96,21 +93,9 @@ const treeDataTwo: TreeItem[] = [
 ];
 
 const Home: React.FC = () => {
-  const dispatch = useAppDispatch();
-  
-  // Get selected items from Redux store
+  // Get selected items from Redux store for display
   const selectedItemsOne = useAppSelector(state => state.checkboxTree.selectedItemsOne);
   const selectedItemsTwo = useAppSelector(state => state.checkboxTree.selectedItemsTwo);
-
-  const handleSelectionChangeOne = (newSelectedItems: string[]) => {
-    dispatch(setSelectedItemsOne(newSelectedItems));
-    console.log("Tree One - Selected items:", newSelectedItems);
-  };
-  
-  const handleSelectionChangeTwo = (newSelectedItems: string[]) => {
-    dispatch(setSelectedItemsTwo(newSelectedItems));
-    console.log("Tree Two - Selected items:", newSelectedItems);
-  };
 
   // Create a display component for selected items
   const SelectedItemsDisplay = ({ items, title }: { items: string[], title: string }) => {
@@ -158,55 +143,18 @@ const Home: React.FC = () => {
         CheckboxTree Component Demo
       </h1>
       
-      <div className="mb-6">
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Shared Search</h2>
-            <SharedSearchBox 
-              placeholder="Search across both trees..." 
-            />
-            <p className="text-sm text-gray-500 mt-2">
-              This search box filters content in both tree components below
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-      
       <Card className="mb-6">
         <CardContent className="p-4 pb-0">
           <h2 className="text-2xl font-semibold mb-2 text-primary">Nature Elements</h2>
           <p className="text-sm text-gray-600 mb-4">Browse and select from our comprehensive nature catalog</p>
-        </CardContent>
         
-        <div className="flex flex-col">
-          <div className="p-2 border-b bg-gray-50 flex justify-between items-center">
-            <span className="text-sm text-gray-500">
-              {selectedItemsOne.length + selectedItemsTwo.length} item{(selectedItemsOne.length + selectedItemsTwo.length) !== 1 ? 's' : ''} selected
-            </span>
-          </div>
-          
-          <div className="overflow-y-auto p-2 max-h-[calc(100vh-200px)]">
-            <div className="unified-tree">
-              <CheckboxTree
-                items={treeDataOne}
-                selectedItems={selectedItemsOne}
-                onSelectionChange={handleSelectionChangeOne}
-                className="mb-0 pb-0 border-b-0"
-                treeIndex={1}
-              />
-              
-              <CheckboxTree
-                items={treeDataTwo}
-                selectedItems={selectedItemsTwo}
-                onSelectionChange={handleSelectionChangeTwo}
-                className="mt-0 pt-0 border-t-0"
-                treeIndex={2}
-              />
-              
-              <NoResultsMessage />
-            </div>
-          </div>
-        </div>
+          {/* Use our new parent component that manages both trees */}
+          <CheckboxTrees 
+            treeOneData={treeDataOne}
+            treeTwoData={treeDataTwo}
+            className="mb-4"
+          />
+        </CardContent>
       </Card>
 
       <div className="md:col-span-2">
